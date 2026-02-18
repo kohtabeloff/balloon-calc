@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Калькулятор себестоимости шаров</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #9b72cf; --primary-light: #e8ddf5; --primary-dark: #7b52af;
+  --accent: #f0a0c0; --accent-light: #fce4ec;
+  --bg: #fafafa; --card: #ffffff; --text: #333333; --text-light: #777777;
+  --border: #e0e0e0; --danger: #e74c3c; --danger-light: #fdeaea;
+  --success: #27ae60; --success-light: #e8f8f0;
+  --info: #2563eb; --info-light: #dbeafe;
+  --warn: #d97706; --warn-light: #fef3c7;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08); --radius: 10px; --transition: 0.2s ease;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; min-height: 100vh; }
+.app { max-width: 960px; margin: 0 auto; padding: 0 16px 80px; }
+.app-header { text-align: center; padding: 24px 0 8px; }
+.app-header h1 { font-size: 22px; font-weight: 700; color: var(--primary-dark); }
+.app-header p { font-size: 13px; color: var(--text-light); margin-top: 2px; }
+
+/* Tabs */
+.tabs { display: flex; gap: 2px; background: var(--card); border-radius: var(--radius); padding: 4px; box-shadow: var(--shadow); margin: 16px 0; position: sticky; top: 0; z-index: 100; }
+.tab-btn { flex: 1; padding: 10px 4px; border: none; background: transparent; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: var(--transition); color: var(--text-light); white-space: nowrap; }
+.tab-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(155,114,207,0.3); }
+.tab-btn:not(.active):hover { background: var(--primary-light); color: var(--primary-dark); }
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.25s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Cards */
+.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; }
+.card-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--primary-dark); }
+
+/* Forms */
+.form-row { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-end; }
+.form-group { display: flex; flex-direction: column; flex: 1; }
+.form-group label { font-size: 12px; font-weight: 500; color: var(--text-light); margin-bottom: 4px; }
+input, select, textarea { padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; transition: var(--transition); background: white; width: 100%; }
+input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(155,114,207,0.15); }
+input[type="number"] { -moz-appearance: textfield; }
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+/* Buttons */
+.btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: var(--transition); font-family: inherit; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); box-shadow: 0 2px 8px rgba(155,114,207,0.3); }
+.btn-secondary { background: var(--primary-light); color: var(--primary-dark); }
+.btn-secondary:hover { background: #d5c4eb; }
+.btn-danger { background: var(--danger-light); color: var(--danger); }
+.btn-danger:hover { background: #f5c6c6; }
+.btn-success { background: var(--success-light); color: var(--success); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-icon { width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+/* Summary */
+.summary { border: 2px solid var(--primary-light); border-radius: var(--radius); padding: 16px; }
+.summary-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+.summary-row.total { border-top: 2px solid var(--primary-light); padding-top: 10px; margin-top: 4px; font-weight: 600; font-size: 16px; }
+.summary-row.highlight { background: var(--primary-light); margin: 2px -8px; padding: 6px 8px; border-radius: 6px; }
+.summary-label { font-size: 14px; color: var(--text); }
+.summary-value { font-size: 14px; font-weight: 600; }
+.summary-section { font-size: 12px; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 0 4px; border-top: 1px solid var(--border); margin-top: 4px; }
+
+/* Items list */
+.item-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.item-row:last-child { border-bottom: none; }
+.item-info { flex: 1; min-width: 0; }
+.item-name { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-detail { font-size: 12px; color: var(--text-light); }
+.item-price { font-size: 14px; font-weight: 600; white-space: nowrap; }
+.item-actions { display: flex; gap: 4px; }
+
+/* Info/Warn/Error boxes */
+.info-box { background: var(--info-light); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--info); }
+.warn-box { background: var(--warn-light); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--warn); }
+.error-box { background: var(--danger-light); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--danger); }
+
+/* Search dropdown */
+.select-search-wrap { position: relative; }
+.select-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1.5px solid var(--primary); border-radius: 0 0 8px 8px; max-height: 240px; overflow-y: auto; z-index: 50; display: none; box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+.select-dropdown.open { display: block; }
+.select-option { padding: 10px 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s; font-size: 14px; }
+.select-option:hover { background: var(--primary-light); }
+.opt-price { font-size: 12px; color: var(--text-light); margin-left: 8px; }
+.opt-cat { font-size: 11px; color: var(--text-light); background: var(--bg); padding: 2px 6px; border-radius: 4px; }
+
+/* Category filter */
+.cat-filter { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+.cat-chip { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; transition: var(--transition); border: 1.5px solid var(--border); background: white; color: var(--text-light); }
+.cat-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* Price cards */
+.price-card { background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+.price-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+.price-card-title { font-size: 15px; font-weight: 600; }
+.price-card-cost { font-size: 13px; color: var(--text-light); margin-bottom: 4px; }
+.price-card-rec { font-size: 14px; color: var(--success); font-weight: 600; margin-bottom: 8px; }
+.price-card-custom { display: flex; gap: 8px; align-items: center; margin: 10px 0; }
+.price-card-custom label { font-size: 13px; white-space: nowrap; font-weight: 500; }
+.price-card-custom input { max-width: 120px; }
+.price-card-margin { font-size: 13px; margin-top: 8px; padding: 10px; background: var(--bg); border-radius: 8px; }
+.price-card-margin .margin-row { display: flex; justify-content: space-between; padding: 3px 0; }
+.price-card-actions { display: flex; gap: 4px; margin-top: 10px; }
+
+/* Balloon item in calculator */
+.calc-item { display: flex; align-items: center; gap: 8px; padding: 10px; background: var(--bg); border-radius: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.calc-item-info { flex: 1; min-width: 150px; }
+.calc-item-name { font-size: 14px; font-weight: 500; }
+.calc-item-detail { font-size: 12px; color: var(--text-light); }
+.calc-item-he { display: flex; align-items: center; gap: 4px; font-size: 13px; margin-top: 4px; }
+.calc-item-he input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--primary); }
+.calc-item-price { font-weight: 600; font-size: 14px; white-space: nowrap; }
+
+/* Collapsible details */
+.details-toggle { background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer; padding:4px 0; font-family:inherit; display:flex; align-items:center; gap:4px; }
+.details-toggle:hover { color:var(--primary-dark); }
+.details-body { display:none; margin-top:6px; }
+.details-body.open { display:block; }
+.details-toggle .arrow { transition: transform 0.2s; display:inline-block; }
+.details-toggle.open .arrow { transform: rotate(90deg); }
+
+/* Main material selected */
+.calc-main-selected { display:none; margin-top:8px; padding:10px 14px; background:var(--primary-light); border-radius:8px; font-size:14px; align-items:center; gap:8px; }
+
+/* Toolbar */
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+
+/* Toast */
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--text); color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 999; opacity: 0; transition: all 0.3s ease; white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* Modal */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 16px; }
+.modal { background: white; border-radius: 16px; padding: 24px; max-width: 420px; width: 100%; }
+.modal h2 { font-size: 20px; color: var(--primary-dark); margin-bottom: 12px; }
+.modal p { font-size: 14px; color: var(--text); margin-bottom: 8px; }
+.confirm-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+
+/* Empty state */
+.empty-state { text-align: center; color: var(--text-light); font-size: 14px; padding: 30px 20px; }
+
+/* Helium table */
+.helium-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.helium-table th { text-align: left; padding: 6px 8px; font-size: 11px; color: var(--text-light); border-bottom: 1px solid var(--border); }
+.helium-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.helium-table input { padding: 6px 8px; font-size: 13px; width: 80px; }
+.he-cost { color: var(--success); font-weight: 600; }
+
+/* Biz sales table */
+.biz-sales-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+.biz-sales-table th { text-align: left; padding: 8px; font-size: 11px; color: var(--text-light); border-bottom: 2px solid var(--border); }
+.biz-sales-table td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.biz-sales-table input { padding: 6px 8px; font-size: 13px; width: 90px; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .form-row { flex-direction: column; gap: 8px; }
+  .form-row > .form-group { width: 100%; }
+  .item-row { flex-wrap: wrap; }
+  .calc-item { flex-direction: column; align-items: stretch; }
+  .price-card-custom { flex-direction: column; align-items: stretch; }
+  .price-card-custom input { max-width: 100%; }
+  .tabs { gap: 1px; }
+  .tab-btn { font-size: 11px; padding: 8px 2px; }
+  .biz-sales-table { font-size: 12px; }
+  .biz-sales-table input { width: 70px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="app-header">
+    <h1 id="app-title">Калькулятор шаров</h1>
+    <p>Себестоимость + экономика бизнеса v4.1</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="materials">Материалы</button>
+    <button class="tab-btn" data-tab="calc">Калькулятор</button>
+    <button class="tab-btn" data-tab="business">Бизнес</button>
+    <button class="tab-btn" data-tab="settings">Настройки</button>
+  </div>
+
+  <!-- ==================== TAB 1: MATERIALS ==================== -->
+  <div id="tab-materials" class="tab-content active">
+    <div class="card">
+      <div class="card-title">Каталог материалов (<span id="mat-count">0</span>)</div>
+      <div class="cat-filter" id="mat-cat-filter">
+        <span class="cat-chip active" data-cat="all">Все</span>
+        <span class="cat-chip" data-cat="balloons">Шары</span>
+        <span class="cat-chip" data-cat="hardware">Фурнитура</span>
+        <span class="cat-chip" data-cat="consumables">Расходники</span>
+        <span class="cat-chip" data-cat="other">Прочее</span>
+      </div>
+      <div id="mat-list"></div>
+      <div id="mat-empty" class="empty-state" style="padding:20px;">
+        <p>Материалов пока нет. Добавьте ниже.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="mat-form-title">Добавить материал</div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label>Название</label>
+          <input type="text" id="mat-name" placeholder="Напр.: Латексный 12&quot;">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label>Категория</label>
+          <select id="mat-category">
+            <option value="balloons">Шары</option>
+            <option value="hardware">Фурнитура</option>
+            <option value="consumables">Расходники</option>
+            <option value="other">Прочее</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label>Цена за шт (руб)</label>
+          <input type="number" id="mat-price" min="0" step="0.5" placeholder="0">
+        </div>
+        <div class="form-group" style="flex:1" id="mat-size-group">
+          <label>Размер шара</label>
+          <select id="mat-balloon-size"></select>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:4px;">
+        <button class="btn btn-primary" id="btn-save-mat">Добавить</button>
+        <button class="btn btn-secondary" id="btn-clear-mat" style="display:none;">Отмена</button>
+      </div>
+      <input type="hidden" id="mat-edit-id" value="">
+    </div>
+  </div>
+
+  <!-- ==================== TAB 2: CALCULATOR ==================== -->
+  <div id="tab-calc" class="tab-content">
+    <div class="card">
+      <div class="card-title" id="calc-form-title">Расчёт себестоимости товара</div>
+
+      <div class="form-group" style="margin-bottom:12px;" id="calc-main-material-group">
+        <label>Основной товар (из каталога)</label>
+        <div class="select-search-wrap">
+          <input type="text" id="calc-main-search" placeholder="Выберите шар или товар..." autocomplete="off">
+          <div class="select-dropdown" id="calc-main-dropdown"></div>
+        </div>
+        <div class="calc-main-selected" id="calc-main-selected">
+          <span id="calc-main-name"></span>
+          <button class="btn btn-sm btn-secondary" onclick="clearMainMaterial()" style="padding:4px 10px; font-size:12px;">&times;</button>
+        </div>
+      </div>
+
+      <div class="form-row" style="align-items:flex-end;">
+        <div class="form-group" style="flex:3">
+          <label>Доп. материалы</label>
+          <div class="select-search-wrap" style="position:relative;">
+            <input type="text" id="calc-search" placeholder="Лента, грузик, упаковка..." autocomplete="off">
+            <button type="button" id="calc-search-clear" style="display:none; position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-light); padding:0 4px;" onclick="clearCalcSearch()">&times;</button>
+            <div class="select-dropdown" id="calc-dropdown"></div>
+          </div>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label>Кол-во</label>
+          <input type="number" id="calc-qty" value="1" min="1" step="1">
+        </div>
+        <div class="form-group" style="flex:0 0 auto;">
+          <button class="btn btn-sm btn-primary" id="btn-calc-add">Добавить</button>
+        </div>
+      </div>
+
+      <div id="calc-items"></div>
+
+      <div class="form-row" style="margin-top:12px;">
+        <div class="form-group">
+          <label>% на брак / потери</label>
+          <input type="number" id="calc-defect" value="0" min="0" max="50" step="1">
+        </div>
+      </div>
+
+      <div class="summary" style="margin-top:16px;" id="calc-summary">
+        <div class="summary-row">
+          <span class="summary-label">Сумма материалов</span>
+          <span class="summary-value" id="calc-sum-materials">0 &#8381;</span>
+        </div>
+        <div class="summary-row" id="calc-row-defect" style="display:none;">
+          <span class="summary-label">+ брак (<span id="calc-defect-pct-display">0</span>%)</span>
+          <span class="summary-value" id="calc-sum-defect">0 &#8381;</span>
+        </div>
+        <div class="summary-row total">
+          <span class="summary-label">Себестоимость (C)</span>
+          <span class="summary-value" id="calc-sum-total">0 &#8381;</span>
+        </div>
+        <div class="summary-row highlight" id="calc-row-rec-price" style="display:none;">
+          <span class="summary-label">Рекомендованная цена</span>
+          <span class="summary-value" id="calc-rec-price">0 &#8381;</span>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:16px; flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btn-save-balloon">Сохранить товар</button>
+        <button class="btn btn-secondary" id="btn-clear-calc">Очистить</button>
+      </div>
+      <input type="hidden" id="calc-edit-id" value="">
+    </div>
+
+    <div class="card">
+      <div class="card-title">Рекомендуемые цены (<span id="calc-balloon-count">0</span>)</div>
+      <div id="calc-prices-list"></div>
+      <div id="calc-prices-empty" class="empty-state" style="padding:20px;">
+        <p>Сохранённых товаров пока нет. Создайте товар выше.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TAB 3: BUSINESS ==================== -->
+  <div id="tab-business" class="tab-content">
+    <div class="card">
+      <div class="card-title">Продажи</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Заказов в месяц</label>
+          <input type="number" id="biz-orders" min="1" step="1" value="30">
+        </div>
+        <div class="form-group">
+          <label>Средний чек (руб)</label>
+          <input type="number" id="biz-avg-check" min="0" step="100" value="3000">
+        </div>
+      </div>
+      <div class="info-box">Выручка: <strong id="biz-revenue-display">90 000 &#8381;</strong>/мес</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Переменные расходы (% от выручки)</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>% менеджера</label>
+          <input type="number" id="biz-manager-pct" min="0" max="100" step="0.5" value="0">
+        </div>
+        <div class="form-group">
+          <label>% оформителя</label>
+          <input type="number" id="biz-decorator-pct" min="0" max="100" step="0.5" value="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>% эквайринга</label>
+          <input type="number" id="biz-acquiring-pct" min="0" max="100" step="0.1" value="0">
+        </div>
+        <div class="form-group">
+          <label>% доставки</label>
+          <input type="number" id="biz-delivery-pct" min="0" max="100" step="0.5" value="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Другие переменные %</label>
+          <input type="number" id="biz-other-var-pct" min="0" max="100" step="0.5" value="0">
+        </div>
+      </div>
+      <div class="info-box">
+        Зарплаты (P): <strong id="biz-p-display">0%</strong> &nbsp;|&nbsp;
+        Прочие (V): <strong id="biz-v-display">0%</strong> &nbsp;|&nbsp;
+        Доставка (D): <strong id="biz-d-display">0%</strong> &nbsp;|&nbsp;
+        Итого: <strong id="biz-var-total-display">0 &#8381;</strong>/мес
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Постоянные расходы (руб/мес)</div>
+      <div id="biz-fixed-list" class="items-list"></div>
+      <div class="form-row" style="margin-top:12px;">
+        <div class="form-group" style="flex:2">
+          <label>Название расхода</label>
+          <input type="text" id="biz-fc-name" placeholder="Напр.: Аренда">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label>Сумма (руб/мес)</label>
+          <input type="number" id="biz-fc-amount" min="0" step="100" placeholder="0">
+        </div>
+        <div class="form-group" style="flex:0 0 auto; align-self:flex-end;">
+          <button class="btn btn-sm btn-primary" id="btn-biz-add-fc">Добавить</button>
+        </div>
+      </div>
+      <div class="info-box" style="margin-top:8px;">Итого постоянных: <strong id="biz-fixed-total-display">0 &#8381;</strong>/мес</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Налоги</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Режим</label>
+          <select id="biz-tax-mode">
+            <option value="pct">% от выручки</option>
+            <option value="fixed">Фиксированная сумма</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label id="biz-tax-label">Ставка (%)</label>
+          <input type="number" id="biz-tax-value" min="0" step="0.5" value="6">
+        </div>
+      </div>
+      <div class="info-box">Налоги: <strong id="biz-tax-display">0 &#8381;</strong>/мес</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Желаемая маржинальность</div>
+      <div class="form-group">
+        <label>% маржинальности (от выручки)</label>
+        <input type="number" id="biz-desired-margin-pct" min="0" max="100" step="0.5" value="0">
+      </div>
+      <div class="info-box" style="margin-top:8px;">Желаемая прибыль: <strong id="biz-desired-profit-display">0 &#8381;</strong>/мес</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Резерв</div>
+      <div class="form-group">
+        <label>Дополнительный резерв (% от цены)</label>
+        <input type="number" id="biz-reserve-pct" min="0" max="50" step="0.5" value="0">
+      </div>
+      <p style="font-size:12px; color:var(--text-light); margin-top:4px;">Запас на непредвиденные расходы. Закладывается в цену каждого шара.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Мои продажи шаров</div>
+      <div id="biz-sales-table-wrap"></div>
+      <div id="biz-sales-empty" class="empty-state" style="padding:16px;">
+        <p>Сохранённых шаров пока нет. Создайте шары в Калькуляторе.</p>
+      </div>
+    </div>
+
+    <div class="card summary" id="biz-summary-card">
+      <div class="card-title" style="color:var(--primary-dark);">Сводка экономики</div>
+      <div class="summary-row">
+        <span class="summary-label">Выручка</span>
+        <span class="summary-value" id="biz-s-revenue">0 &#8381;</span>
+      </div>
+      <div class="summary-section">Переменные расходы</div>
+      <div class="summary-row">
+        <span class="summary-label">Зарплаты (P = <span id="biz-s-p-pct">0</span>%)</span>
+        <span class="summary-value" id="biz-s-salaries">0 &#8381;</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Прочие перем. (V = <span id="biz-s-v-pct">0</span>%)</span>
+        <span class="summary-value" id="biz-s-other-var">0 &#8381;</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Доставка (D = <span id="biz-s-d-pct">0</span>%)</span>
+        <span class="summary-value" id="biz-s-delivery">0 &#8381;</span>
+      </div>
+      <div class="summary-row" style="font-weight:600;">
+        <span class="summary-label">Итого переменные</span>
+        <span class="summary-value" id="biz-s-var-total">0 &#8381;</span>
+      </div>
+
+      <div class="summary-section">Себестоимость материалов</div>
+      <div class="summary-row">
+        <span class="summary-label">Ср. доля себестоимости</span>
+        <span class="summary-value" id="biz-s-cost-share">&mdash;</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Оценка расходов на материалы</span>
+        <span class="summary-value" id="biz-s-cost-estimate">&mdash;</span>
+      </div>
+
+      <div class="summary-section">Постоянные расходы</div>
+      <div id="biz-s-fixed-rows"></div>
+      <div class="summary-row" style="font-weight:600;">
+        <span class="summary-label">Итого постоянные</span>
+        <span class="summary-value" id="biz-s-fixed-total">0 &#8381;</span>
+      </div>
+
+      <div class="summary-section">Налоги</div>
+      <div class="summary-row">
+        <span class="summary-label">Налоги</span>
+        <span class="summary-value" id="biz-s-taxes">0 &#8381;</span>
+      </div>
+
+      <div class="summary-row total">
+        <span class="summary-label">Итого расходы</span>
+        <span class="summary-value" id="biz-s-expenses-total">0 &#8381;</span>
+      </div>
+
+      <div class="summary-row total" style="border-top-width:3px;">
+        <span class="summary-label">Фактическая прибыль</span>
+        <span class="summary-value" id="biz-s-profit">0 &#8381;</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Желаемая прибыль (<span id="biz-s-margin-pct">0</span>%)</span>
+        <span class="summary-value" id="biz-s-desired">0 &#8381;</span>
+      </div>
+
+      <div id="biz-formula-error" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- ==================== TAB 4: SETTINGS ==================== -->
+  <div id="tab-settings" class="tab-content">
+    <div class="card">
+      <div class="card-title">Гелий (параметры баллона)</div>
+      <p style="font-size:13px; color:var(--text-light); margin-bottom:12px;">Укажите цену баллона и сколько шаров каждого размера из него надувается. Стоимость гелия будет автоматически учитываться в Калькуляторе.</p>
+      <div class="form-group" style="max-width:300px; margin-bottom:16px;">
+        <label>Цена баллона (руб)</label>
+        <input type="number" id="set-he-price" min="0" step="100" placeholder="Напр.: 2500">
+      </div>
+      <table class="helium-table">
+        <thead><tr><th>Размер</th><th>Шаров из баллона</th><th>Цена за 1</th><th></th></tr></thead>
+        <tbody id="helium-tbody"></tbody>
+      </table>
+      <div class="form-row" style="margin-top:12px;">
+        <div class="form-group" style="flex:2">
+          <label>Новый размер</label>
+          <input type="text" id="he-new-label" placeholder='Напр.: Фольга 36"'>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label>Шаров из баллона</label>
+          <input type="number" id="he-new-count" min="1" step="1" placeholder="0">
+        </div>
+        <div class="form-group" style="flex:0 0 auto; align-self:flex-end;">
+          <button class="btn btn-sm btn-primary" id="btn-add-he-size">Добавить</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Название студии</div>
+      <div class="form-group">
+        <input type="text" id="set-studio-name" placeholder="Напр.: Шарик44">
+      </div>
+      <p style="font-size:12px; color:var(--text-light); margin-top:4px;">Будет показано в шапке калькулятора.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Данные</div>
+      <div class="toolbar">
+        <button class="btn btn-secondary" id="btn-export-all">Экспорт (JSON)</button>
+        <button class="btn btn-secondary" id="btn-import-all">Импорт</button>
+        <button class="btn btn-danger" id="btn-reset-all">Сбросить все данные</button>
+      </div>
+      <p style="font-size:12px; color:var(--text-light);">Экспорт сохраняет все данные в файл. Импорт загружает данные из файла.</p>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none;">
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="onboarding-modal" style="display:none;">
+  <div class="modal">
+    <h2>Добро пожаловать!</h2>
+    <p>Это калькулятор себестоимости воздушных шаров с экономикой бизнеса.</p>
+    <p><strong>Как это работает:</strong></p>
+    <p>1. <strong>Материалы</strong> — заполните каталог материалов с ценами</p>
+    <p>2. <strong>Калькулятор</strong> — соберите шар из материалов, узнайте себестоимость и рекомендованную цену</p>
+    <p>3. <strong>Бизнес</strong> — введите расходы студии, увидите полную экономику</p>
+    <p style="margin-top:12px;">Загрузим демо-данные для быстрого старта.</p>
+    <button class="btn btn-primary" id="btn-onboard-start" style="margin-top:12px; width:100%;">Начать работу</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirm-modal" style="display:none;">
+  <div class="modal">
+    <h2 id="confirm-title">Подтверждение</h2>
+    <p id="confirm-message"></p>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" id="confirm-cancel">Отмена</button>
+      <button class="btn btn-danger" id="confirm-ok">Подтвердить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ CONSTANTS ============
+const STORAGE_KEY = 'balloon-calc-v4';
+const CATEGORIES = { balloons: 'Шары', hardware: 'Фурнитура', consumables: 'Расходники', other: 'Прочее' };
+
+function genId() { return Math.random().toString(36).substr(2, 9); }
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function escAttr(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;'); }
+function fmt(n) { return (n === undefined || n === null || isNaN(n)) ? '0 \u20BD' : Math.round(n).toLocaleString('ru-RU') + ' \u20BD'; }
+function fmtDec(n) { return (Math.round(n * 100) / 100).toLocaleString('ru-RU', {minimumFractionDigits: 0, maximumFractionDigits: 2}) + ' \u20BD'; }
+function fmtPct(n) { return (Math.round(n * 10) / 10) + '%'; }
+
+// ============ DEFAULT DATA ============
+function getDefaultHeliumSizes() {
+  return [
+    { label: '5"', balloonsPerTank: 125 },
+    { label: '10"', balloonsPerTank: 50 },
+    { label: '12"', balloonsPerTank: 32 },
+    { label: '14"', balloonsPerTank: 16 },
+    { label: '18"', balloonsPerTank: 8 },
+    { label: '24"', balloonsPerTank: 3 },
+    { label: '36"', balloonsPerTank: 1 },
+    { label: 'Фольга 18"', balloonsPerTank: 22 },
+    { label: 'Фольга 24"', balloonsPerTank: 11 },
+    { label: 'Фольга 36"', balloonsPerTank: 5 },
+    { label: 'Цифра 40"', balloonsPerTank: 9 }
+  ];
+}
+
+function getDefaultState() {
+  return {
+    materials: [],
+    balloons: [],
+    business: {
+      ordersPerMonth: 30, avgCheck: 3000,
+      managerPct: 0, decoratorPct: 0, acquiringPct: 0, deliveryPct: 0, otherVariablePct: 0,
+      fixedCosts: [], taxMode: 'pct', taxValue: 6,
+      desiredMarginPct: 0, reservePct: 0
+    },
+    settings: {
+      studioName: '',
+      helium: { tankPrice: 0, sizes: getDefaultHeliumSizes() }
+    },
+    onboarded: false
+  };
+}
+
+function getDemoMaterials() {
+  return [
+    { id: genId(), name: 'Латексный 5" (пастель)', category: 'balloons', price: 8, balloonSize: '5"' },
+    { id: genId(), name: 'Латексный 10" (пастель)', category: 'balloons', price: 12, balloonSize: '10"' },
+    { id: genId(), name: 'Латексный 12" (пастель)', category: 'balloons', price: 17, balloonSize: '12"' },
+    { id: genId(), name: 'Латексный 14" (пастель)', category: 'balloons', price: 25, balloonSize: '14"' },
+    { id: genId(), name: 'Латексный 18" (пастель)', category: 'balloons', price: 80, balloonSize: '18"' },
+    { id: genId(), name: 'Латексный 24" (кристалл)', category: 'balloons', price: 180, balloonSize: '24"' },
+    { id: genId(), name: 'Латексный 36"', category: 'balloons', price: 350, balloonSize: '36"' },
+    { id: genId(), name: 'Фольга сердце/звезда 18"', category: 'balloons', price: 120, balloonSize: 'Фольга 18"' },
+    { id: genId(), name: 'Фольга круг 18"', category: 'balloons', price: 100, balloonSize: 'Фольга 18"' },
+    { id: genId(), name: 'Фольга фигура', category: 'balloons', price: 250, balloonSize: 'Фольга 24"' },
+    { id: genId(), name: 'Цифра 40"', category: 'balloons', price: 280, balloonSize: 'Цифра 40"' },
+    { id: genId(), name: 'Лента (1м)', category: 'hardware', price: 2, balloonSize: '' },
+    { id: genId(), name: 'Грузик', category: 'hardware', price: 25, balloonSize: '' },
+    { id: genId(), name: 'Палочка-держатель', category: 'hardware', price: 4, balloonSize: '' },
+    { id: genId(), name: 'Клей-точки (1 шт)', category: 'hardware', price: 1, balloonSize: '' },
+    { id: genId(), name: 'Тассел', category: 'hardware', price: 15, balloonSize: '' },
+    { id: genId(), name: 'Упаковка (пакет)', category: 'consumables', price: 5, balloonSize: '' },
+    { id: genId(), name: 'Коробка-сюрприз', category: 'consumables', price: 300, balloonSize: '' }
+  ];
+}
+
+function getDemoBalloons(materials) {
+  const find = (q) => materials.find(m => m.name.includes(q));
+  const m12 = find('12" (паст');
+  const mFoil = find('сердце');
+  const mRib = find('Лента');
+  const mWt = find('Грузик');
+  const mStk = find('Палочка');
+  const he12 = Math.round(2500 / 32 * 100) / 100;
+  const heFoil18 = Math.round(2500 / 22 * 100) / 100;
+
+  return [
+    { id: genId(), name: 'Латексный 12" с гелием', items: [
+      { id: genId(), materialId: m12?.id||'', materialName: m12?.name||'Латекс 12"', price: m12?.price||17, qty: 1, helium: true, heliumCost: he12, _isMain: true },
+      { id: genId(), materialId: mRib?.id||'', materialName: mRib?.name||'Лента', price: mRib?.price||2, qty: 1, helium: false, heliumCost: 0, _isMain: false },
+      { id: genId(), materialId: mWt?.id||'', materialName: mWt?.name||'Грузик', price: mWt?.price||25, qty: 1, helium: false, heliumCost: 0, _isMain: false }
+    ], defectPct: 5, customPrice: 150 },
+    { id: genId(), name: 'Фольга сердце 18" с гелием', items: [
+      { id: genId(), materialId: mFoil?.id||'', materialName: mFoil?.name||'Фольга 18"', price: mFoil?.price||120, qty: 1, helium: true, heliumCost: heFoil18, _isMain: true },
+      { id: genId(), materialId: mRib?.id||'', materialName: mRib?.name||'Лента', price: mRib?.price||2, qty: 1, helium: false, heliumCost: 0, _isMain: false },
+      { id: genId(), materialId: mWt?.id||'', materialName: mWt?.name||'Грузик', price: mWt?.price||25, qty: 1, helium: false, heliumCost: 0, _isMain: false }
+    ], defectPct: 2, customPrice: 300 },
+    { id: genId(), name: 'Латексный 12" воздушный', items: [
+      { id: genId(), materialId: m12?.id||'', materialName: m12?.name||'Латекс 12"', price: m12?.price||17, qty: 1, helium: false, heliumCost: 0, _isMain: true },
+      { id: genId(), materialId: mStk?.id||'', materialName: mStk?.name||'Палочка', price: mStk?.price||4, qty: 1, helium: false, heliumCost: 0, _isMain: false }
+    ], defectPct: 5, customPrice: 60 }
+  ];
+}
+
+function getDemoBusiness() {
+  return {
+    ordersPerMonth: 30, avgCheck: 3000,
+    managerPct: 10, decoratorPct: 5, acquiringPct: 2, deliveryPct: 3, otherVariablePct: 0,
+    fixedCosts: [
+      { id: genId(), name: 'Аренда', amount: 15000 },
+      { id: genId(), name: 'CRM', amount: 2000 },
+      { id: genId(), name: 'Реклама', amount: 10000 }
+    ],
+    taxMode: 'pct', taxValue: 6,
+    desiredMarginPct: 5, reservePct: 0
+  };
+}
+
+// ============ STATE ============
+let state = getDefaultState();
+let currentCalcItems = [];
+let selectedMaterialId = null;
+let mainMaterialId = null;
+let matFilterCat = 'all';
+
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      state = deepMerge(getDefaultState(), parsed);
+      saveState();
+    } catch(e) {}
+  }
+  if (!raw) {
+    const v3raw = localStorage.getItem('balloon-calc-v3');
+    if (v3raw) { try { migrateFromV3(JSON.parse(v3raw)); } catch(e) {} }
+  }
+  if (!localStorage.getItem(STORAGE_KEY)) {
+    const v2raw = localStorage.getItem('balloon-calc');
+    if (v2raw) { try { migrateFromV2(JSON.parse(v2raw)); } catch(e) {} }
+  }
+  // Patch: fix balloon materials with missing or broken balloonSize
+  if (state.materials) {
+    const sizeLabels = state.settings.helium.sizes.map(s => s.label);
+    state.materials.forEach(m => {
+      if (m.category === 'balloons') {
+        // Fix balloonSize without trailing " (caused by escHtml bug in <option value>)
+        if (m.balloonSize && !sizeLabels.includes(m.balloonSize) && sizeLabels.includes(m.balloonSize + '"')) {
+          m.balloonSize = m.balloonSize + '"';
+        }
+        // Guess from name if still missing
+        if (!m.balloonSize || !sizeLabels.includes(m.balloonSize)) {
+          const sorted = [...sizeLabels].sort((a, b) => b.length - a.length);
+          const found = sorted.find(l => m.name.includes(l));
+          if (found) { m.balloonSize = found; }
+        }
+      }
+    });
+    saveState();
+  }
+}
+
+function deepMerge(target, source) {
+  const result = { ...target };
+  for (const key in source) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      result[key] = deepMerge(target[key] || {}, source[key]);
+    } else {
+      result[key] = source[key];
+    }
+  }
+  return result;
+}
+
+function migrateFromV3(v3) {
+  if (v3.business) {
+    state.business = deepMerge(state.business, v3.business);
+    if (v3.business.desiredProfit && !v3.business.desiredMarginPct) {
+      const rev = (v3.business.ordersPerMonth || 30) * (v3.business.avgCheck || 3000);
+      state.business.desiredMarginPct = rev > 0 ? Math.round(v3.business.desiredProfit / rev * 100 * 10) / 10 : 0;
+    }
+  }
+  if (v3.settings) state.settings = deepMerge(state.settings, v3.settings);
+  state.onboarded = true;
+  saveState();
+  showToast('Данные мигрированы из v3');
+}
+
+function migrateFromV2(v2) {
+  if (v2.settings && v2.settings.fixedCosts) state.business.fixedCosts = v2.settings.fixedCosts;
+  if (v2.settings && v2.settings.helium) {
+    const h = v2.settings.helium;
+    state.settings.helium.tankPrice = h.tankPrice || 0;
+  }
+  if (v2.settings && v2.settings.expectedOrdersPerMonth) state.business.ordersPerMonth = v2.settings.expectedOrdersPerMonth;
+  state.onboarded = true;
+  saveState();
+  showToast('Данные мигрированы из v2');
+}
+
+// ============ COMPUTED ============
+function balloonCost(b) {
+  const materialCost = (b.items || []).reduce((s, item) => {
+    const base = (item.price || 0) * (item.qty || 1);
+    const he = item.helium ? (item.heliumCost || 0) * (item.qty || 1) : 0;
+    return s + base + he;
+  }, 0);
+  return materialCost * (1 + (b.defectPct || 0) / 100);
+}
+
+function heliumCostForSize(sizeLabel) {
+  const h = state.settings.helium;
+  if (!h || !h.tankPrice || !sizeLabel) return 0;
+  const size = h.sizes.find(s => s.label === sizeLabel);
+  if (!size || !size.balloonsPerTank || size.balloonsPerTank <= 0) return 0;
+  return Math.round(h.tankPrice / size.balloonsPerTank * 100) / 100;
+}
+
+function getBusinessCalc() {
+  const b = state.business;
+  const revenue = (b.ordersPerMonth || 0) * (b.avgCheck || 0);
+  const P = ((b.managerPct || 0) + (b.decoratorPct || 0)) / 100;
+  const V = ((b.acquiringPct || 0) + (b.otherVariablePct || 0)) / 100;
+  const D = (b.deliveryPct || 0) / 100;
+  const salaries = revenue * P;
+  const otherVar = revenue * V;
+  const delivery = revenue * D;
+  const variableTotal = salaries + otherVar + delivery;
+  const fixedTotal = (b.fixedCosts || []).reduce((s, fc) => s + (fc.amount || 0), 0);
+  const taxes = b.taxMode === 'pct' ? revenue * (b.taxValue || 0) / 100 : (b.taxValue || 0);
+  const desiredProfit = revenue * (b.desiredMarginPct || 0) / 100;
+  const businessNeed = fixedTotal + taxes + desiredProfit;
+  const M = revenue > 0 ? businessNeed / revenue : 0;
+  const businessNeedReal = fixedTotal + taxes;
+  const Mreal = revenue > 0 ? businessNeedReal / revenue : 0;
+  const reserve = (b.reservePct || 0) / 100;
+  const denominator = 1 - M - P - V - D - reserve;
+  const denominatorReal = 1 - Mreal - P - V - D - reserve;
+  const hasError = denominator <= 0;
+
+  let avgCostShare = null;
+  let costEstimate = null;
+  const withPrice = state.balloons.filter(bl => bl.customPrice && bl.customPrice > 0);
+  if (withPrice.length > 0) {
+    const shares = withPrice.map(bl => balloonCost(bl) / bl.customPrice);
+    avgCostShare = shares.reduce((a, v) => a + v, 0) / shares.length;
+    costEstimate = revenue * avgCostShare;
+  }
+
+  const expensesTotal = variableTotal + fixedTotal + taxes + (costEstimate || 0);
+  const actualProfit = revenue - expensesTotal;
+
+  return { revenue, P, V, D, salaries, otherVar, delivery, variableTotal, fixedTotal, taxes, desiredProfit, businessNeed, M, Mreal, reserve, denominator, denominatorReal, hasError, avgCostShare, costEstimate, expensesTotal, actualProfit };
+}
+
+function recommendedPrice(C) {
+  const calc = getBusinessCalc();
+  if (calc.hasError || calc.denominator <= 0) return null;
+  return C / calc.denominator;
+}
+
+// Full margin: accounts for ALL costs (materials + variable + fixed + taxes via denominator)
+function fullMargin(cp, C) {
+  const calc = getBusinessCalc();
+  if (!cp || cp <= 0 || calc.hasError) return null;
+  // fullCost = C + cp*(P+V+D+Mreal+reserve) — без желаемой прибыли
+  // profit = cp - fullCost = cp*denominatorReal - C
+  const profit = cp * calc.denominatorReal - C;
+  return (profit / cp) * 100;
+}
+
+// ============ TOAST ============
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ============ CONFIRM ============
+let confirmResolve = null;
+function showConfirm(title, message) {
+  return new Promise(resolve => {
+    confirmResolve = resolve;
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-message').textContent = message;
+    document.getElementById('confirm-modal').style.display = 'flex';
+  });
+}
+document.getElementById('confirm-cancel').addEventListener('click', () => { document.getElementById('confirm-modal').style.display = 'none'; if (confirmResolve) confirmResolve(false); });
+document.getElementById('confirm-ok').addEventListener('click', () => { document.getElementById('confirm-modal').style.display = 'none'; if (confirmResolve) confirmResolve(true); });
+
+// ============ TABS ============
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'business') recalcBusiness();
+    if (btn.dataset.tab === 'calc') { renderCalcDropdown(); renderBalloonPrices(); }
+    if (btn.dataset.tab === 'materials') renderMaterials();
+  });
+});
+
+// ============ TAB 1: MATERIALS ============
+document.querySelectorAll('#mat-cat-filter .cat-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#mat-cat-filter .cat-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    matFilterCat = chip.dataset.cat;
+    renderMaterials();
+  });
+});
+
+document.getElementById('mat-category').addEventListener('change', () => {
+  document.getElementById('mat-size-group').style.display = document.getElementById('mat-category').value === 'balloons' ? '' : 'none';
+});
+
+function populateBalloonSizeSelect() {
+  const sel = document.getElementById('mat-balloon-size');
+  sel.innerHTML = '<option value="">-- без размера --</option>' +
+    state.settings.helium.sizes.map(s => `<option value="${escAttr(s.label)}">${escHtml(s.label)}</option>`).join('');
+}
+
+function renderMaterials() {
+  const list = document.getElementById('mat-list');
+  const empty = document.getElementById('mat-empty');
+  const filtered = matFilterCat === 'all' ? state.materials : state.materials.filter(m => m.category === matFilterCat);
+  document.getElementById('mat-count').textContent = state.materials.length;
+
+  if (filtered.length === 0) {
+    list.innerHTML = ''; empty.style.display = 'block'; return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = filtered.map(m => {
+    const catName = CATEGORIES[m.category] || m.category;
+    const sizeStr = m.balloonSize ? ` (${escHtml(m.balloonSize)})` : '';
+    return `<div class="item-row">
+      <div class="item-info">
+        <div class="item-name">${escHtml(m.name)}${sizeStr}</div>
+        <div class="item-detail">${catName}</div>
+      </div>
+      <div class="item-price">${fmtDec(m.price)}</div>
+      <div class="item-actions">
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="editMaterial('${m.id}')" title="Ред.">&#9998;</button>
+        <button class="btn btn-sm btn-danger btn-icon" onclick="deleteMaterial('${m.id}')" title="Уд.">&times;</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('btn-save-mat').addEventListener('click', saveMaterial);
+document.getElementById('btn-clear-mat').addEventListener('click', clearMatForm);
+document.getElementById('mat-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveMaterial(); } });
+
+function saveMaterial() {
+  const name = document.getElementById('mat-name').value.trim();
+  const category = document.getElementById('mat-category').value;
+  const price = parseFloat(document.getElementById('mat-price').value) || 0;
+  const balloonSize = category === 'balloons' ? document.getElementById('mat-balloon-size').value : '';
+  if (!name) { showToast('Укажите название'); return; }
+
+  const editId = document.getElementById('mat-edit-id').value;
+  if (editId) {
+    const idx = state.materials.findIndex(m => m.id === editId);
+    if (idx !== -1) {
+      state.materials[idx] = { ...state.materials[idx], name, category, price, balloonSize };
+      showToast('Материал обновлён');
+    }
+  } else {
+    state.materials.push({ id: genId(), name, category, price, balloonSize });
+    showToast('Материал добавлен');
+  }
+  clearMatForm(); saveState(); renderMaterials();
+}
+
+function clearMatForm() {
+  document.getElementById('mat-name').value = '';
+  document.getElementById('mat-category').value = 'balloons';
+  document.getElementById('mat-price').value = '';
+  document.getElementById('mat-balloon-size').value = '';
+  document.getElementById('mat-edit-id').value = '';
+  document.getElementById('mat-form-title').textContent = 'Добавить материал';
+  document.getElementById('btn-save-mat').textContent = 'Добавить';
+  document.getElementById('btn-clear-mat').style.display = 'none';
+  document.getElementById('mat-size-group').style.display = '';
+}
+
+function editMaterial(id) {
+  const m = state.materials.find(mat => mat.id === id);
+  if (!m) return;
+  document.getElementById('mat-name').value = m.name;
+  document.getElementById('mat-category').value = m.category;
+  document.getElementById('mat-price').value = m.price;
+  document.getElementById('mat-balloon-size').value = m.balloonSize || '';
+  document.getElementById('mat-edit-id').value = id;
+  document.getElementById('mat-form-title').textContent = 'Редактирование материала';
+  document.getElementById('btn-save-mat').textContent = 'Сохранить';
+  document.getElementById('btn-clear-mat').style.display = '';
+  document.getElementById('mat-size-group').style.display = m.category === 'balloons' ? '' : 'none';
+  document.getElementById('mat-name').focus();
+}
+
+async function deleteMaterial(id) {
+  const m = state.materials.find(mat => mat.id === id);
+  if (!m) return;
+  const ok = await showConfirm('Удалить?', '«' + m.name + '» будет удалён из каталога.');
+  if (!ok) return;
+  state.materials = state.materials.filter(mat => mat.id !== id);
+  saveState(); renderMaterials(); showToast('Материал удалён');
+}
+
+// ============ TAB 2: CALCULATOR ============
+// Main material dropdown
+const calcMainSearch = document.getElementById('calc-main-search');
+const calcMainDropdown = document.getElementById('calc-main-dropdown');
+calcMainSearch.addEventListener('focus', () => renderMainDropdown());
+calcMainSearch.addEventListener('input', () => renderMainDropdown());
+
+function renderMainDropdown() {
+  const q = calcMainSearch.value.toLowerCase();
+  const items = state.materials.filter(m => !q || m.name.toLowerCase().includes(q));
+  if (items.length === 0) {
+    calcMainDropdown.innerHTML = '<div style="padding:12px;color:var(--text-light);font-size:13px;">Нет материалов.</div>';
+    calcMainDropdown.classList.add('open'); return;
+  }
+  calcMainDropdown.innerHTML = items.map(m => {
+    const catName = CATEGORIES[m.category] || '';
+    return `<div class="select-option" data-id="${m.id}">
+      <span>${escHtml(m.name)}</span>
+      <span><span class="opt-cat">${catName}</span> <span class="opt-price">${fmtDec(m.price)}</span></span>
+    </div>`;
+  }).join('');
+  calcMainDropdown.querySelectorAll('.select-option').forEach(opt => {
+    opt.addEventListener('click', () => selectMainMaterial(opt.dataset.id));
+  });
+  calcMainDropdown.classList.add('open');
+}
+
+function selectMainMaterial(matId) {
+  const m = state.materials.find(mat => mat.id === matId);
+  if (!m) return;
+  mainMaterialId = matId;
+  calcMainSearch.style.display = 'none';
+  calcMainDropdown.classList.remove('open');
+  const sel = document.getElementById('calc-main-selected');
+  sel.style.display = 'flex';
+  document.getElementById('calc-main-name').innerHTML = '<strong>' + escHtml(m.name) + '</strong> — ' + fmtDec(m.price);
+  const isBalloon = m.category === 'balloons';
+  // Ensure balloonSize exists, try to guess from name if missing
+  if (isBalloon && !m.balloonSize) {
+    const sizes = state.settings.helium.sizes.map(s => s.label).sort((a, b) => b.length - a.length);
+    const found = sizes.find(l => m.name.includes(l));
+    if (found) { m.balloonSize = found; saveState(); }
+  }
+  const bSize = m.balloonSize || '';
+  const heCost = isBalloon && bSize ? heliumCostForSize(bSize) : 0;
+  // Remove old main item if any
+  currentCalcItems = currentCalcItems.filter(i => !i._isMain);
+  currentCalcItems.unshift({
+    id: genId(), materialId: m.id, materialName: m.name, price: m.price, qty: 1,
+    helium: false, heliumCost: heCost, _isBalloon: isBalloon, _balloonSize: bSize, _isMain: true
+  });
+  renderCalcItems();
+  renderMainHelium();
+}
+
+function clearMainMaterial() {
+  mainMaterialId = null;
+  calcMainSearch.style.display = ''; calcMainSearch.value = '';
+  document.getElementById('calc-main-selected').style.display = 'none';
+  currentCalcItems = currentCalcItems.filter(i => !i._isMain);
+  renderCalcItems();
+}
+
+// Extra materials dropdown
+const calcSearch = document.getElementById('calc-search');
+const calcDropdown = document.getElementById('calc-dropdown');
+calcSearch.addEventListener('focus', () => renderCalcDropdown());
+calcSearch.addEventListener('input', () => renderCalcDropdown());
+document.addEventListener('click', e => { if (!e.target.closest('.select-search-wrap')) { calcDropdown.classList.remove('open'); calcMainDropdown.classList.remove('open'); } });
+
+function renderCalcDropdown() {
+  const q = calcSearch.value.toLowerCase();
+  const items = state.materials.filter(m => !q || m.name.toLowerCase().includes(q));
+  if (items.length === 0) {
+    calcDropdown.innerHTML = '<div style="padding:12px;color:var(--text-light);font-size:13px;">Нет материалов.</div>';
+    calcDropdown.classList.add('open'); return;
+  }
+  calcDropdown.innerHTML = items.map(m => {
+    const catName = CATEGORIES[m.category] || '';
+    return `<div class="select-option" data-id="${m.id}">
+      <span>${escHtml(m.name)}</span>
+      <span><span class="opt-cat">${catName}</span> <span class="opt-price">${fmtDec(m.price)}</span></span>
+    </div>`;
+  }).join('');
+  calcDropdown.querySelectorAll('.select-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      selectedMaterialId = opt.dataset.id;
+      const m = state.materials.find(mat => mat.id === opt.dataset.id);
+      if (m) calcSearch.value = m.name;
+      calcDropdown.classList.remove('open');
+      document.getElementById('calc-search-clear').style.display = '';
+    });
+  });
+  calcDropdown.classList.add('open');
+}
+
+document.getElementById('btn-calc-add').addEventListener('click', addCalcItem);
+calcSearch.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addCalcItem(); } });
+
+function clearCalcSearch() {
+  selectedMaterialId = null; calcSearch.value = '';
+  document.getElementById('calc-search-clear').style.display = 'none';
+}
+
+function addCalcItem() {
+  if (!selectedMaterialId) { showToast('Выберите материал'); return; }
+  const m = state.materials.find(mat => mat.id === selectedMaterialId);
+  if (!m) return;
+  const qty = parseInt(document.getElementById('calc-qty').value) || 1;
+  const isBalloon = m.category === 'balloons';
+  const heCost = isBalloon && m.balloonSize ? heliumCostForSize(m.balloonSize) : 0;
+
+  currentCalcItems.push({
+    id: genId(), materialId: m.id, materialName: m.name, price: m.price, qty,
+    helium: false, heliumCost: heCost, _isBalloon: isBalloon, _balloonSize: m.balloonSize || '', _isMain: false
+  });
+
+  selectedMaterialId = null; calcSearch.value = '';
+  document.getElementById('calc-qty').value = '1';
+  document.getElementById('calc-search-clear').style.display = 'none';
+  renderCalcItems(); showToast('Позиция добавлена');
+}
+
+function renderCalcItems() {
+  const container = document.getElementById('calc-items');
+  const nonMain = currentCalcItems.filter(i => !i._isMain);
+  if (nonMain.length === 0) {
+    container.innerHTML = '<p style="font-size:13px; color:var(--text-light); padding:8px 0;">Дополнительные материалы не добавлены</p>';
+    recalcCalcSummary(); return;
+  }
+  container.innerHTML = nonMain.map((item, _) => {
+    const idx = currentCalcItems.indexOf(item);
+    const baseTotal = item.price * item.qty;
+    const heTotal = item.helium ? item.heliumCost * item.qty : 0;
+    const total = baseTotal + heTotal;
+    const heLabel = item.helium ? ' + гелий ' + fmtDec(item.heliumCost) : '';
+    const priceDetail = item.qty > 1 ? fmtDec(item.price) + heLabel + ' × ' + item.qty : fmtDec(item.price) + heLabel;
+
+    let heCheckbox = '';
+    if (item._isBalloon && item.heliumCost > 0) {
+      heCheckbox = `<div class="calc-item-he">
+        <input type="checkbox" ${item.helium ? 'checked' : ''} onchange="toggleCalcHelium(${idx}, this.checked)">
+        <label>Гелий (${escHtml(item._balloonSize)}): ${fmtDec(item.heliumCost)}</label>
+      </div>`;
+    }
+
+    return `<div class="calc-item">
+      <div class="calc-item-info">
+        <div class="calc-item-name">${escHtml(item.materialName)}</div>
+        <div class="calc-item-detail">${priceDetail}</div>
+        ${heCheckbox}
+      </div>
+      <div class="calc-item-price">${fmtDec(total)}</div>
+      <button class="btn btn-sm btn-danger btn-icon" onclick="removeCalcItem(${idx})" style="width:28px;height:28px;font-size:14px;">&times;</button>
+    </div>`;
+  }).join('');
+  recalcCalcSummary();
+}
+
+// Render main item helium checkbox separately (in the main-selected area)
+function renderMainHelium() {
+  const mainItem = currentCalcItems.find(i => i._isMain);
+  const nameEl = document.getElementById('calc-main-name');
+  if (!mainItem) return;
+  // Refresh heliumCost from current settings
+  if (mainItem._isBalloon && mainItem._balloonSize) {
+    mainItem.heliumCost = heliumCostForSize(mainItem._balloonSize);
+  }
+  let heHtml = '';
+  if (mainItem._isBalloon) {
+    const idx = currentCalcItems.indexOf(mainItem);
+    const heCostLabel = mainItem.heliumCost > 0
+      ? fmtDec(mainItem.heliumCost)
+      : '<span style="color:var(--danger)">0 (задайте цену баллона в Настройках)</span>';
+    heHtml = `<label style="margin-left:12px; font-size:13px; display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap;">
+      <input type="checkbox" ${mainItem.helium ? 'checked' : ''} onchange="toggleCalcHelium(${idx}, this.checked)" style="width:auto; accent-color:var(--primary);">
+      Гелий (${escHtml(mainItem._balloonSize)}): ${heCostLabel}
+    </label>`;
+  }
+  nameEl.innerHTML = '<strong>' + escHtml(mainItem.materialName) + '</strong> — ' + fmtDec(mainItem.price) + heHtml;
+}
+
+function toggleCalcHelium(idx, checked) {
+  if (currentCalcItems[idx]) {
+    currentCalcItems[idx].helium = checked;
+    if (currentCalcItems[idx]._isMain) renderMainHelium();
+    renderCalcItems();
+  }
+}
+function removeCalcItem(idx) {
+  if (currentCalcItems[idx] && currentCalcItems[idx]._isMain) {
+    clearMainMaterial(); return;
+  }
+  currentCalcItems.splice(idx, 1);
+  renderCalcItems();
+}
+
+document.getElementById('calc-defect').addEventListener('input', recalcCalcSummary);
+
+function recalcCalcSummary() {
+  // Refresh helium costs from current settings
+  currentCalcItems.forEach(item => {
+    if (item._isBalloon && item._balloonSize) item.heliumCost = heliumCostForSize(item._balloonSize);
+  });
+  const materialCost = currentCalcItems.reduce((s, item) => {
+    return s + item.price * item.qty + (item.helium ? item.heliumCost * item.qty : 0);
+  }, 0);
+  const defectPct = parseFloat(document.getElementById('calc-defect').value) || 0;
+  const defectAmount = materialCost * defectPct / 100;
+  const C = materialCost * (1 + defectPct / 100);
+
+  document.getElementById('calc-sum-materials').textContent = fmtDec(materialCost);
+  const rowDefect = document.getElementById('calc-row-defect');
+  if (defectPct > 0) {
+    rowDefect.style.display = 'flex';
+    document.getElementById('calc-defect-pct-display').textContent = defectPct;
+    document.getElementById('calc-sum-defect').textContent = fmtDec(defectAmount);
+  } else { rowDefect.style.display = 'none'; }
+  document.getElementById('calc-sum-total').textContent = fmtDec(C);
+
+  const rec = recommendedPrice(C);
+  const rowRec = document.getElementById('calc-row-rec-price');
+  if (rec !== null && C > 0) {
+    rowRec.style.display = 'flex';
+    document.getElementById('calc-rec-price').textContent = fmt(rec);
+  } else { rowRec.style.display = 'none'; }
+}
+
+// Save balloon
+document.getElementById('btn-save-balloon').addEventListener('click', () => {
+  const mainItem = currentCalcItems.find(i => i._isMain);
+  if (!mainItem) { showToast('Выберите основной товар'); return; }
+  const name = mainItem.materialName;
+  // Check if helium is on — add to name
+  const hasHelium = currentCalcItems.some(i => i.helium);
+  const fullName = hasHelium ? name + ' с гелием' : name;
+
+  const defectPct = parseFloat(document.getElementById('calc-defect').value) || 0;
+  const editId = document.getElementById('calc-edit-id').value;
+  const items = currentCalcItems.map(i => ({ id: i.id, materialId: i.materialId, materialName: i.materialName, price: i.price, qty: i.qty, helium: i.helium, heliumCost: i.heliumCost, _isMain: !!i._isMain }));
+
+  if (editId) {
+    const idx = state.balloons.findIndex(b => b.id === editId);
+    if (idx !== -1) { state.balloons[idx] = { ...state.balloons[idx], name: fullName, items, defectPct }; showToast('Товар обновлён'); }
+    document.getElementById('calc-edit-id').value = '';
+    document.getElementById('calc-form-title').textContent = 'Расчёт себестоимости товара';
+    document.getElementById('btn-save-balloon').textContent = 'Сохранить товар';
+  } else {
+    state.balloons.push({ id: genId(), name: fullName, items, defectPct, customPrice: null });
+    showToast('Товар сохранён');
+  }
+  clearCalcForm(); saveState(); renderBalloonPrices();
+});
+
+document.getElementById('btn-clear-calc').addEventListener('click', clearCalcForm);
+
+function clearCalcForm() {
+  document.getElementById('calc-defect').value = '0';
+  document.getElementById('calc-edit-id').value = '';
+  document.getElementById('calc-form-title').textContent = 'Расчёт себестоимости товара';
+  document.getElementById('btn-save-balloon').textContent = 'Сохранить товар';
+  mainMaterialId = null;
+  calcMainSearch.style.display = ''; calcMainSearch.value = '';
+  document.getElementById('calc-main-selected').style.display = 'none';
+  currentCalcItems = []; renderCalcItems();
+}
+
+function editBalloon(id) {
+  const b = state.balloons.find(bl => bl.id === id);
+  if (!b) return;
+  document.getElementById('calc-defect').value = b.defectPct || 0;
+  document.getElementById('calc-edit-id').value = id;
+  document.getElementById('calc-form-title').textContent = 'Редактирование товара';
+  document.getElementById('btn-save-balloon').textContent = 'Сохранить изменения';
+  currentCalcItems = (b.items || []).map(item => {
+    const mat = state.materials.find(m => m.id === item.materialId);
+    return { ...item, _isBalloon: mat ? mat.category === 'balloons' : false, _balloonSize: mat ? (mat.balloonSize || '') : '', _isMain: !!item._isMain };
+  });
+  // Restore main material UI
+  const mainItem = currentCalcItems.find(i => i._isMain);
+  if (mainItem) {
+    mainMaterialId = mainItem.materialId;
+    calcMainSearch.style.display = 'none';
+    document.getElementById('calc-main-selected').style.display = 'flex';
+    renderMainHelium();
+  }
+  renderCalcItems(); window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function deleteBalloon(id) {
+  const b = state.balloons.find(bl => bl.id === id);
+  if (!b) return;
+  const ok = await showConfirm('Удалить товар?', '«' + b.name + '» будет удалён.');
+  if (!ok) return;
+  state.balloons = state.balloons.filter(bl => bl.id !== id);
+  saveState(); renderBalloonPrices(); showToast('Товар удалён');
+}
+
+function renderBalloonPrices() {
+  const list = document.getElementById('calc-prices-list');
+  const empty = document.getElementById('calc-prices-empty');
+  document.getElementById('calc-balloon-count').textContent = state.balloons.length;
+  const calc = getBusinessCalc();
+
+  if (state.balloons.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  list.innerHTML = state.balloons.map(b => {
+    const C = balloonCost(b);
+    const rec = calc.hasError ? null : C / calc.denominator;
+    const cp = b.customPrice;
+    const hasCustom = cp !== null && cp > 0;
+
+    let marginHtml = '';
+    if (hasCustom) {
+      // Full margin (accounting for ALL business costs)
+      const fm = fullMargin(cp, C);
+      const profit = cp * calc.denominatorReal - C; // real profit per balloon after all costs
+      const costSharePct = C / cp * 100; // material cost share
+
+      let warn = '';
+      if (cp < C) warn = '<div class="error-box" style="margin-bottom:8px;font-size:12px;">Цена ниже себестоимости!</div>';
+      else if (rec !== null && cp < rec) warn = '<div class="warn-box" style="margin-bottom:8px;font-size:12px;">Ниже рекомендованной цены</div>';
+
+      const sal = cp * calc.P;
+      const biz = cp * calc.M;
+      const other = cp * (calc.V + calc.D);
+      const res = cp * calc.reserve;
+
+      marginHtml = `<div class="price-card-margin">
+        ${warn}
+        <div class="margin-row"><span>Маржинальность:</span><strong style="color:${fm !== null && fm >= 0 ? 'var(--success)' : 'var(--danger)'}">${fm !== null ? fmtPct(fm) : '—'}</strong></div>
+        <div class="margin-row"><span>Прибыль с шара:</span><strong>${fmtDec(profit)}</strong></div>
+        <div class="margin-row" style="font-size:12px; color:var(--text-light);"><span>% себестоимости:</span><span>${fmtPct(costSharePct)}</span></div>
+        <button class="details-toggle" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open');">
+          <span class="arrow">&#9654;</span> Подробнее
+        </button>
+        <div class="details-body">
+          <div style="font-size:12px; color:var(--text-light); margin-bottom:4px;">Распределение цены:</div>
+          <div class="margin-row"><span>Материалы:</span><span>${fmtDec(C)}</span></div>
+          <div class="margin-row"><span>Зарплаты (P):</span><span>${fmtDec(sal)}</span></div>
+          <div class="margin-row"><span>Бизнес (M):</span><span>${fmtDec(biz)}</span></div>
+          <div class="margin-row"><span>Прочие (V+D):</span><span>${fmtDec(other)}</span></div>
+          ${calc.reserve > 0 ? '<div class="margin-row"><span>Резерв:</span><span>' + fmtDec(res) + '</span></div>' : ''}
+        </div>
+      </div>`;
+    }
+
+    return `<div class="price-card">
+      <div class="price-card-header"><div class="price-card-title">${escHtml(b.name)}</div></div>
+      <div class="price-card-cost">Себестоимость: ${fmtDec(C)}${b.defectPct > 0 ? ' (брак ' + b.defectPct + '%)' : ''}</div>
+      ${rec !== null ? '<div class="price-card-rec">Рекомендованная: ' + fmt(rec) + '</div>' : '<div style="font-size:13px;color:var(--text-light);margin-bottom:4px;">Заполните Бизнес для реком. цены</div>'}
+      <div class="price-card-custom">
+        <label>Моя цена:</label>
+        <input type="number" value="${hasCustom ? cp : ''}" min="0" step="10" placeholder="—" onchange="setCustomPrice('${b.id}', this.value)">
+        <span>₽</span>
+      </div>
+      ${marginHtml}
+      <div class="price-card-actions">
+        <button class="btn btn-sm btn-secondary" onclick="editBalloon('${b.id}')">Редактировать</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteBalloon('${b.id}')">Удалить</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setCustomPrice(id, val) {
+  const idx = state.balloons.findIndex(b => b.id === id);
+  if (idx === -1) return;
+  const num = parseFloat(val);
+  state.balloons[idx].customPrice = (num > 0) ? num : null;
+  saveState(); renderBalloonPrices();
+}
+
+// ============ TAB 3: BUSINESS ============
+const bizInputs = ['biz-orders', 'biz-avg-check', 'biz-manager-pct', 'biz-decorator-pct',
+  'biz-acquiring-pct', 'biz-delivery-pct', 'biz-other-var-pct', 'biz-tax-value', 'biz-desired-margin-pct', 'biz-reserve-pct'];
+
+bizInputs.forEach(id => {
+  document.getElementById(id).addEventListener('input', () => { saveBusiness(); recalcBusiness(); });
+});
+
+document.getElementById('biz-tax-mode').addEventListener('change', () => {
+  const mode = document.getElementById('biz-tax-mode').value;
+  document.getElementById('biz-tax-label').textContent = mode === 'pct' ? 'Ставка (%)' : 'Сумма (руб/мес)';
+  saveBusiness(); recalcBusiness();
+});
+
+function saveBusiness() {
+  const b = state.business;
+  b.ordersPerMonth = parseInt(document.getElementById('biz-orders').value) || 1;
+  b.avgCheck = parseFloat(document.getElementById('biz-avg-check').value) || 0;
+  b.managerPct = parseFloat(document.getElementById('biz-manager-pct').value) || 0;
+  b.decoratorPct = parseFloat(document.getElementById('biz-decorator-pct').value) || 0;
+  b.acquiringPct = parseFloat(document.getElementById('biz-acquiring-pct').value) || 0;
+  b.deliveryPct = parseFloat(document.getElementById('biz-delivery-pct').value) || 0;
+  b.otherVariablePct = parseFloat(document.getElementById('biz-other-var-pct').value) || 0;
+  b.taxMode = document.getElementById('biz-tax-mode').value;
+  b.taxValue = parseFloat(document.getElementById('biz-tax-value').value) || 0;
+  b.desiredMarginPct = parseFloat(document.getElementById('biz-desired-margin-pct').value) || 0;
+  b.reservePct = parseFloat(document.getElementById('biz-reserve-pct').value) || 0;
+  saveState();
+}
+
+function loadBusinessForm() {
+  const b = state.business;
+  document.getElementById('biz-orders').value = b.ordersPerMonth;
+  document.getElementById('biz-avg-check').value = b.avgCheck;
+  document.getElementById('biz-manager-pct').value = b.managerPct;
+  document.getElementById('biz-decorator-pct').value = b.decoratorPct;
+  document.getElementById('biz-acquiring-pct').value = b.acquiringPct;
+  document.getElementById('biz-delivery-pct').value = b.deliveryPct || 0;
+  document.getElementById('biz-other-var-pct').value = b.otherVariablePct;
+  document.getElementById('biz-tax-mode').value = b.taxMode;
+  document.getElementById('biz-tax-value').value = b.taxValue;
+  document.getElementById('biz-desired-margin-pct').value = b.desiredMarginPct || 0;
+  document.getElementById('biz-reserve-pct').value = b.reservePct;
+  document.getElementById('biz-tax-label').textContent = b.taxMode === 'pct' ? 'Ставка (%)' : 'Сумма (руб/мес)';
+}
+
+function renderFixedCosts() {
+  const list = document.getElementById('biz-fixed-list');
+  const costs = state.business.fixedCosts || [];
+  if (costs.length === 0) {
+    list.innerHTML = '<p style="font-size:13px; color:var(--text-light); padding:4px 0;">Расходы не указаны</p>';
+  } else {
+    list.innerHTML = costs.map(fc => `<div class="item-row">
+      <div class="item-info"><div class="item-name">${escHtml(fc.name)}</div></div>
+      <div class="item-price">${fmt(fc.amount)}/мес</div>
+      <div class="item-actions"><button class="btn btn-sm btn-danger btn-icon" onclick="removeBizFC('${fc.id}')">&times;</button></div>
+    </div>`).join('');
+  }
+  document.getElementById('biz-fixed-total-display').textContent = fmt(costs.reduce((s, fc) => s + (fc.amount || 0), 0));
+}
+
+function removeBizFC(id) {
+  state.business.fixedCosts = (state.business.fixedCosts || []).filter(fc => fc.id !== id);
+  saveState(); renderFixedCosts(); recalcBusiness();
+}
+
+document.getElementById('btn-biz-add-fc').addEventListener('click', () => {
+  const name = document.getElementById('biz-fc-name').value.trim();
+  const amount = parseFloat(document.getElementById('biz-fc-amount').value) || 0;
+  if (!name) { showToast('Укажите название'); return; }
+  if (!state.business.fixedCosts) state.business.fixedCosts = [];
+  state.business.fixedCosts.push({ id: genId(), name, amount });
+  document.getElementById('biz-fc-name').value = ''; document.getElementById('biz-fc-amount').value = '';
+  saveState(); renderFixedCosts(); recalcBusiness(); showToast('Расход добавлен');
+});
+
+function renderSalesTable() {
+  const wrap = document.getElementById('biz-sales-table-wrap');
+  const empty = document.getElementById('biz-sales-empty');
+  if (state.balloons.length === 0) { wrap.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  const calc = getBusinessCalc();
+
+  let rows = state.balloons.map(b => {
+    const C = balloonCost(b);
+    const cp = b.customPrice;
+    const hasP = cp && cp > 0;
+    const fm = hasP ? fullMargin(cp, C) : null;
+    const costSharePct = hasP ? C / cp * 100 : null;
+    const rec = calc.hasError ? null : C / calc.denominator;
+    return `<tr>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(b.name)}</td>
+      <td>${fmtDec(C)}</td>
+      <td>${rec !== null ? fmt(rec) : '—'}</td>
+      <td><input type="number" value="${hasP ? cp : ''}" min="0" step="10" placeholder="—" onchange="setCustomPrice('${b.id}', this.value)"></td>
+      <td style="font-size:12px; color:var(--text-light);">${costSharePct !== null ? fmtPct(costSharePct) : '—'}</td>
+      <td style="font-weight:600; color:${fm !== null ? (fm >= 0 ? 'var(--success)' : 'var(--danger)') : 'var(--text-light)'}">${fm !== null ? fmtPct(fm) : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `<table class="biz-sales-table">
+    <thead><tr><th>Товар</th><th>Себест.</th><th>Реком.</th><th>Моя цена</th><th>% себест.</th><th>Маржа</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function pctOfRevenue(val, revenue) {
+  if (!revenue || revenue <= 0) return '';
+  return ' (' + fmtPct(val / revenue * 100) + ')';
+}
+
+function recalcBusiness() {
+  const calc = getBusinessCalc();
+  const b = state.business;
+
+  document.getElementById('biz-revenue-display').textContent = fmt(calc.revenue);
+  document.getElementById('biz-p-display').textContent = fmtPct(calc.P * 100);
+  document.getElementById('biz-v-display').textContent = fmtPct(calc.V * 100);
+  document.getElementById('biz-d-display').textContent = fmtPct(calc.D * 100);
+  document.getElementById('biz-var-total-display').textContent = fmt(calc.variableTotal);
+  document.getElementById('biz-tax-display').textContent = fmt(calc.taxes);
+  document.getElementById('biz-desired-profit-display').textContent = fmt(calc.desiredProfit);
+
+  // Summary
+  document.getElementById('biz-s-revenue').textContent = fmt(calc.revenue);
+  document.getElementById('biz-s-p-pct').textContent = (Math.round(calc.P * 1000) / 10);
+  document.getElementById('biz-s-salaries').textContent = fmt(calc.salaries);
+  document.getElementById('biz-s-v-pct').textContent = (Math.round(calc.V * 1000) / 10);
+  document.getElementById('biz-s-other-var').textContent = fmt(calc.otherVar);
+  document.getElementById('biz-s-d-pct').textContent = (Math.round(calc.D * 1000) / 10);
+  document.getElementById('biz-s-delivery').textContent = fmt(calc.delivery);
+  document.getElementById('biz-s-var-total').textContent = fmt(calc.variableTotal) + pctOfRevenue(calc.variableTotal, calc.revenue);
+
+  if (calc.avgCostShare !== null) {
+    document.getElementById('biz-s-cost-share').textContent = '~' + fmtPct(calc.avgCostShare * 100);
+    document.getElementById('biz-s-cost-estimate').textContent = fmt(calc.costEstimate) + pctOfRevenue(calc.costEstimate, calc.revenue);
+  } else {
+    document.getElementById('biz-s-cost-share').textContent = '—';
+    document.getElementById('biz-s-cost-estimate').textContent = 'Укажите «мою цену» у шаров';
+  }
+
+  const fixedRows = document.getElementById('biz-s-fixed-rows');
+  fixedRows.innerHTML = (b.fixedCosts || []).map(fc =>
+    '<div class="summary-row"><span class="summary-label" style="padding-left:12px;">' + escHtml(fc.name) + '</span><span class="summary-value">' + fmt(fc.amount) + '</span></div>'
+  ).join('');
+  document.getElementById('biz-s-fixed-total').textContent = fmt(calc.fixedTotal) + pctOfRevenue(calc.fixedTotal, calc.revenue);
+  document.getElementById('biz-s-taxes').textContent = fmt(calc.taxes) + pctOfRevenue(calc.taxes, calc.revenue);
+
+  document.getElementById('biz-s-expenses-total').textContent = fmt(calc.expensesTotal) + pctOfRevenue(calc.expensesTotal, calc.revenue);
+  document.getElementById('biz-s-profit').textContent = fmt(calc.actualProfit) + pctOfRevenue(calc.actualProfit, calc.revenue);
+  document.getElementById('biz-s-profit').style.color = calc.actualProfit >= 0 ? 'var(--success)' : 'var(--danger)';
+  document.getElementById('biz-s-margin-pct').textContent = b.desiredMarginPct || 0;
+  document.getElementById('biz-s-desired').textContent = fmt(calc.desiredProfit);
+
+  const errBox = document.getElementById('biz-formula-error');
+  if (calc.hasError) {
+    errBox.style.display = 'block';
+    errBox.innerHTML = '<div class="error-box" style="margin-top:12px;">На материалы ничего не остаётся! Уменьшите расходы или увеличьте выручку.</div>';
+  } else { errBox.style.display = 'none'; }
+
+  renderSalesTable();
+}
+
+// ============ TAB 4: SETTINGS ============
+function renderHeliumSettings() {
+  const h = state.settings.helium;
+  document.getElementById('set-he-price').value = h.tankPrice || '';
+  const tbody = document.getElementById('helium-tbody');
+  tbody.innerHTML = h.sizes.map((s, i) => {
+    const cost = s.balloonsPerTank > 0 && h.tankPrice > 0 ? h.tankPrice / s.balloonsPerTank : 0;
+    return `<tr>
+      <td>${escHtml(s.label)}</td>
+      <td><input type="number" value="${s.balloonsPerTank}" min="1" step="1" onchange="updateHeSize(${i}, this.value)"></td>
+      <td class="he-cost">${cost > 0 ? fmtDec(cost) : '<span style="color:var(--text-light)">—</span>'}</td>
+      <td><button class="btn btn-sm btn-danger btn-icon" onclick="removeHeSize(${i})" style="width:24px;height:24px;font-size:14px;">&times;</button></td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('set-he-price').addEventListener('change', () => {
+  state.settings.helium.tankPrice = parseFloat(document.getElementById('set-he-price').value) || 0;
+  saveState(); renderHeliumSettings(); populateBalloonSizeSelect();
+});
+
+function updateHeSize(idx, val) {
+  if (state.settings.helium.sizes[idx]) {
+    state.settings.helium.sizes[idx].balloonsPerTank = parseInt(val) || 1;
+    saveState(); renderHeliumSettings(); populateBalloonSizeSelect();
+  }
+}
+
+function removeHeSize(idx) {
+  state.settings.helium.sizes.splice(idx, 1);
+  saveState(); renderHeliumSettings(); populateBalloonSizeSelect();
+}
+
+document.getElementById('btn-add-he-size').addEventListener('click', () => {
+  const label = document.getElementById('he-new-label').value.trim();
+  const count = parseInt(document.getElementById('he-new-count').value) || 0;
+  if (!label) { showToast('Укажите размер'); return; }
+  if (count <= 0) { showToast('Укажите кол-во шаров'); return; }
+  state.settings.helium.sizes.push({ label, balloonsPerTank: count });
+  document.getElementById('he-new-label').value = ''; document.getElementById('he-new-count').value = '';
+  saveState(); renderHeliumSettings(); populateBalloonSizeSelect(); showToast('Размер добавлен');
+});
+
+document.getElementById('set-studio-name').addEventListener('change', () => {
+  state.settings.studioName = document.getElementById('set-studio-name').value.trim();
+  document.getElementById('app-title').textContent = state.settings.studioName || 'Калькулятор шаров';
+  saveState();
+});
+
+function downloadJson(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); URL.revokeObjectURL(a.href);
+}
+
+document.getElementById('btn-export-all').addEventListener('click', () => { downloadJson(state, 'balloon-calc-v4-backup.json'); showToast('Данные экспортированы'); });
+
+document.getElementById('btn-import-all').addEventListener('click', () => { document.getElementById('import-file').click(); });
+document.getElementById('import-file').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.materials || data.balloons || data.business) {
+        state = deepMerge(getDefaultState(), data);
+        saveState(); initUI(); showToast('Данные импортированы');
+      } else showToast('Неверный формат');
+    } catch { showToast('Ошибка чтения'); }
+  };
+  reader.readAsText(file); e.target.value = '';
+});
+
+document.getElementById('btn-reset-all').addEventListener('click', async () => {
+  const ok = await showConfirm('Сбросить все?', 'Все данные будут удалены.');
+  if (!ok) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state = getDefaultState(); state.onboarded = true; currentCalcItems = []; mainMaterialId = null;
+  saveState(); initUI(); showToast('Данные сброшены');
+});
+
+// ============ ONBOARDING ============
+function checkOnboarding() {
+  if (!state.onboarded) document.getElementById('onboarding-modal').style.display = 'flex';
+}
+
+document.getElementById('btn-onboard-start').addEventListener('click', () => {
+  state.onboarded = true;
+  state.materials = getDemoMaterials();
+  state.balloons = getDemoBalloons(state.materials);
+  state.business = getDemoBusiness();
+  state.settings.helium.tankPrice = 2500;
+  saveState();
+  document.getElementById('onboarding-modal').style.display = 'none';
+  initUI();
+  showToast('Демо-данные загружены!');
+});
+
+// ============ INIT ============
+function initUI() {
+  populateBalloonSizeSelect();
+  loadBusinessForm();
+  renderHeliumSettings();
+  renderMaterials();
+  renderCalcItems();
+  renderBalloonPrices();
+  renderFixedCosts();
+  recalcBusiness();
+  if (state.settings.studioName) {
+    document.getElementById('app-title').textContent = state.settings.studioName;
+    document.getElementById('set-studio-name').value = state.settings.studioName;
+  }
+  document.getElementById('mat-size-group').style.display = document.getElementById('mat-category').value === 'balloons' ? '' : 'none';
+}
+
+function init() { loadState(); initUI(); checkOnboarding(); }
+init();
+</script>
+</body>
+</html>
