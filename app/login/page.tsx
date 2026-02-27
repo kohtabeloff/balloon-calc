@@ -1,0 +1,103 @@
+'use client';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL!;
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`${directusUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      console.log('Login response:', data);
+      if (!res.ok) throw new Error(data.errors?.[0]?.message || 'Ошибка входа');
+      localStorage.setItem('auth_token', data.data.access_token);
+      localStorage.setItem('refresh_token', data.data.refresh_token);
+      router.push('/');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Неверный email или пароль');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center',
+      justifyContent: 'center', background: '#fafafa', fontFamily: 'system-ui, sans-serif'
+    }}>
+      <div style={{
+        background: 'white', borderRadius: 16, padding: 32,
+        width: '100%', maxWidth: 380, boxShadow: '0 4px 24px rgba(0,0,0,0.08)'
+      }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#7b52af', marginBottom: 8, textAlign: 'center' }}>
+          Калькулятор шаров
+        </h1>
+        <p style={{ fontSize: 13, color: '#777', textAlign: 'center', marginBottom: 24 }}>
+          Войдите в свой аккаунт
+        </p>
+        <form onSubmit={handleLogin}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#777', display: 'block', marginBottom: 4 }}>
+              Email
+            </label>
+            <input
+              type="email" value={email} onChange={e => setEmail(e.target.value)}
+              required placeholder="your@email.com"
+              style={{
+                width: '100%', padding: '10px 12px', border: '1.5px solid #e0e0e0',
+                borderRadius: 8, fontSize: 14, boxSizing: 'border-box'
+              }}
+            />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#777', display: 'block', marginBottom: 4 }}>
+              Пароль
+            </label>
+            <input
+              type="password" value={password} onChange={e => setPassword(e.target.value)}
+              required placeholder="••••••••"
+              style={{
+                width: '100%', padding: '10px 12px', border: '1.5px solid #e0e0e0',
+                borderRadius: 8, fontSize: 14, boxSizing: 'border-box'
+              }}
+            />
+          </div>
+          {error && (
+            <div style={{
+              background: '#fdeaea', color: '#e74c3c', borderRadius: 8,
+              padding: '10px 14px', fontSize: 13, marginBottom: 16
+            }}>
+              {error}
+            </div>
+          )}
+          <button
+            type="submit" disabled={loading}
+            style={{
+              width: '100%', padding: '12px', background: '#9b72cf',
+              color: 'white', border: 'none', borderRadius: 8, fontSize: 15,
+              fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1
+            }}
+          >
+            {loading ? 'Вход...' : 'Войти'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
