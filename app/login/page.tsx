@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL!;
+const directusUrl = 'https://d5den1rn3bvis8kem9f0.4b4k4pg5.apigw.yandexcloud.net';
 
 // Домен, который дописывается к логину при входе
 // Аккаунты в Directus создаются в формате login@upstudio.ru
