@@ -1709,21 +1709,16 @@ document.getElementById('btn-change-password').addEventListener('click', async (
   const token = getToken();
   if (!token) { doLogout(); return; }
   try {
-    const res = await fetch(`${DIRECTUS_URL}/users/me`, {
+    await fetch(`${DIRECTUS_URL}/users/me`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: newPwd })
     });
-    if (res.status === 401) { doLogout(); return; }
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      const msg = errData.errors?.[0]?.message || `Ошибка ${res.status}`;
-      showToast('Ошибка: ' + msg);
-      return;
-    }
-    document.getElementById('set-new-password').value = '';
-    document.getElementById('set-confirm-password').value = '';
-    showToast('Пароль изменён!');
+    // После смены пароля Directus инвалидирует токен — нужно выйти и войти заново
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('refresh_token');
+    showToast('Пароль изменён! Войдите снова.');
+    setTimeout(() => { window.location.href = '/login'; }, 1500);
   } catch(e) { showToast('Ошибка соединения'); }
 });
 
