@@ -1715,7 +1715,12 @@ document.getElementById('btn-change-password').addEventListener('click', async (
       body: JSON.stringify({ password: newPwd })
     });
     if (res.status === 401) { doLogout(); return; }
-    if (!res.ok) { showToast('Ошибка при смене пароля'); return; }
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      const msg = errData.errors?.[0]?.message || `Ошибка ${res.status}`;
+      showToast('Ошибка: ' + msg);
+      return;
+    }
     document.getElementById('set-new-password').value = '';
     document.getElementById('set-confirm-password').value = '';
     showToast('Пароль изменён!');
