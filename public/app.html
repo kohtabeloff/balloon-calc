@@ -548,6 +548,19 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     </div>
 
     <div class="card">
+      <div class="card-title">Сменить пароль</div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>Новый пароль</label>
+        <input type="password" id="set-new-password" placeholder="Минимум 8 символов">
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>Подтвердить пароль</label>
+        <input type="password" id="set-confirm-password" placeholder="Повторите пароль">
+      </div>
+      <button class="btn btn-primary" id="btn-change-password">Сохранить пароль</button>
+    </div>
+
+    <div class="card">
       <div class="card-title">Данные</div>
       <div class="toolbar">
         <button class="btn btn-secondary" id="btn-export-all">Экспорт (JSON)</button>
@@ -1687,6 +1700,27 @@ function downloadJson(data, filename) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); URL.revokeObjectURL(a.href);
 }
+
+document.getElementById('btn-change-password').addEventListener('click', async () => {
+  const newPwd = document.getElementById('set-new-password').value;
+  const confirmPwd = document.getElementById('set-confirm-password').value;
+  if (!newPwd || newPwd.length < 8) { showToast('Минимум 8 символов'); return; }
+  if (newPwd !== confirmPwd) { showToast('Пароли не совпадают'); return; }
+  const token = getToken();
+  if (!token) { doLogout(); return; }
+  try {
+    const res = await fetch(`${DIRECTUS_URL}/users/me`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: newPwd })
+    });
+    if (res.status === 401) { doLogout(); return; }
+    if (!res.ok) { showToast('Ошибка при смене пароля'); return; }
+    document.getElementById('set-new-password').value = '';
+    document.getElementById('set-confirm-password').value = '';
+    showToast('Пароль изменён!');
+  } catch(e) { showToast('Ошибка соединения'); }
+});
 
 document.getElementById('btn-export-all').addEventListener('click', () => { downloadJson(state, 'balloon-calc-backup.json'); showToast('Данные экспортированы'); });
 

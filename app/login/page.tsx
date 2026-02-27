@@ -4,9 +4,13 @@ import { useRouter } from 'next/navigation';
 
 const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL!;
 
+// Домен, который дописывается к логину при входе
+// Аккаунты в Directus создаются в формате login@upstudio.ru
+const LOGIN_DOMAIN = '@upstudio.ru';
+
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,20 +20,20 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     try {
+      // Преобразуем логин в email: "client001" → "client001@upstudio.ru"
+      const email = login.trim().includes('@') ? login.trim() : login.trim() + LOGIN_DOMAIN;
       const res = await fetch(`${directusUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      console.log('Login response:', data);
       if (!res.ok) throw new Error(data.errors?.[0]?.message || 'Ошибка входа');
       localStorage.setItem('auth_token', data.data.access_token);
       localStorage.setItem('refresh_token', data.data.refresh_token);
       router.push('/');
     } catch (err) {
-      console.error('Login error:', err);
-      setError('Неверный email или пароль');
+      setError('Неверный логин или пароль');
     } finally {
       setLoading(false);
     }
@@ -53,11 +57,12 @@ export default function LoginPage() {
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#777', display: 'block', marginBottom: 4 }}>
-              Email
+              Логин
             </label>
             <input
-              type="email" value={email} onChange={e => setEmail(e.target.value)}
-              required placeholder="your@email.com"
+              type="text" value={login} onChange={e => setLogin(e.target.value)}
+              required placeholder="client001"
+              autoCapitalize="none" autoCorrect="off" spellCheck={false}
               style={{
                 width: '100%', padding: '10px 12px', border: '1.5px solid #e0e0e0',
                 borderRadius: 8, fontSize: 14, boxSizing: 'border-box'
