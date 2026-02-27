@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Управление клиентами</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .card { background: #fff; border-radius: 12px; padding: 32px; width: 100%; max-width: 420px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    h1 { font-size: 20px; font-weight: 600; margin-bottom: 24px; color: #1a1a1a; }
+    h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #1a1a1a; }
+    label { display: block; font-size: 13px; color: #555; margin-bottom: 5px; }
+    input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+    input:focus { border-color: #6c63ff; }
+    .form-group { margin-bottom: 14px; }
+    .hint { font-size: 12px; color: #999; margin-top: 4px; }
+    button { width: 100%; padding: 11px; background: #6c63ff; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; transition: background 0.2s; }
+    button:hover { background: #5a52d5; }
+    button:disabled { background: #b0aee8; cursor: not-allowed; }
+    .msg { margin-top: 14px; padding: 10px 14px; border-radius: 8px; font-size: 14px; display: none; }
+    .msg.success { background: #e8f5e9; color: #2e7d32; display: block; }
+    .msg.error { background: #fdecea; color: #c62828; display: block; }
+    .divider { border: none; border-top: 1px solid #eee; margin: 24px 0; }
+    #auth-section { }
+    #main-section { display: none; }
+    .users-list { margin-top: 16px; }
+    .user-item { padding: 10px 12px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+    .user-item .email { font-weight: 600; color: #1a1a1a; }
+    .user-item .note { color: #888; margin-top: 2px; }
+    .refresh-btn { background: #f0f0f0; color: #555; margin-top: 0; }
+    .refresh-btn:hover { background: #e0e0e0; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <!-- Ввод admin key -->
+  <div id="auth-section">
+    <h1>Панель управления</h1>
+    <div class="form-group">
+      <label>Административный ключ</label>
+      <input type="password" id="input-admin-key" placeholder="Введите ключ">
+    </div>
+    <button onclick="doAuth()">Войти</button>
+    <div class="msg" id="auth-msg"></div>
+  </div>
+
+  <!-- Основная панель -->
+  <div id="main-section">
+    <h2>Создать клиента</h2>
+    <div class="form-group">
+      <label>Логин</label>
+      <input type="text" id="input-login" placeholder="Например: client001">
+      <div class="hint">Клиент будет входить по этому логину</div>
+    </div>
+    <div class="form-group">
+      <label>Пароль</label>
+      <input type="text" id="input-password" placeholder="Минимум 8 символов">
+    </div>
+    <div class="form-group">
+      <label>Заметка (только для тебя)</label>
+      <input type="text" id="input-note" placeholder="Например: ИП Иванов, Казань">
+    </div>
+    <button id="btn-create" onclick="createUser()">Создать клиента</button>
+    <div class="msg" id="create-msg"></div>
+
+    <hr class="divider">
+
+    <h2>Клиенты</h2>
+    <button class="refresh-btn" onclick="loadUsers()">Обновить список</button>
+    <div class="users-list" id="users-list"></div>
+  </div>
+</div>
+
+<script>
+  const API = 'https://d5den1rn3bvis8kem9f0.4b4k4pg5.apigw.yandexcloud.net';
+  const DOMAIN = '@upstudio.ru';
+  let adminKey = '';
+
+  async function doAuth() {
+    const key = document.getElementById('input-admin-key').value.trim();
+    if (!key) return;
+    // Проверяем ключ попыткой запроса
+    const res = await fetch(`${API}/admin/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
+      body: JSON.stringify({ email: '__check__', password: '__check__' })
+    });
+    if (res.status === 403) {
+      showMsg('auth-msg', 'Неверный ключ', 'error');
+      return;
+    }
+    adminKey = key;
+    document.getElementById('auth-section').style.display = 'none';
+    document.getElementById('main-section').style.display = 'block';
+    loadUsers();
+  }
+
+  async function createUser() {
+    const login = document.getElementById('input-login').value.trim();
+    const password = document.getElementById('input-password').value.trim();
+    const note = document.getElementById('input-note').value.trim();
+
+    if (!login) { showMsg('create-msg', 'Введите логин', 'error'); return; }
+    if (password.length < 8) { showMsg('create-msg', 'Пароль минимум 8 символов', 'error'); return; }
+
+    const btn = document.getElementById('btn-create');
+    btn.disabled = true;
+    btn.textContent = 'Создаём...';
+
+    const res = await fetch(`${API}/admin/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+      body: JSON.stringify({ email: login + DOMAIN, password, note })
+    });
+    const data = await res.json();
+
+    btn.disabled = false;
+    btn.textContent = 'Создать клиента';
+
+    if (!res.ok) {
+      showMsg('create-msg', data.errors?.[0]?.message || 'Ошибка', 'error');
+      return;
+    }
+
+    showMsg('create-msg', `Клиент создан! Логин: ${login}, Пароль: ${password}`, 'success');
+    document.getElementById('input-login').value = '';
+    document.getElementById('input-password').value = '';
+    document.getElementById('input-note').value = '';
+    loadUsers();
+  }
+
+  async function loadUsers() {
+    const res = await fetch(`${API}/admin/users`, {
+      method: 'GET',
+      headers: { 'x-admin-key': adminKey }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const list = document.getElementById('users-list');
+    if (!data.data?.length) { list.innerHTML = '<div style="color:#999;font-size:13px;">Нет клиентов</div>'; return; }
+    list.innerHTML = data.data.map(u => `
+      <div class="user-item">
+        <div class="email">${u.email.replace(DOMAIN, '')}</div>
+        ${u.note ? `<div class="note">${u.note}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function showMsg(id, text, type) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'msg ' + type;
+  }
+
+  document.getElementById('input-admin-key').addEventListener('keydown', e => { if (e.key === 'Enter') doAuth(); });
+</script>
+
+</body>
+</html>
