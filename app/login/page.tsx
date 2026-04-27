@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const directusUrl = 'https://d5den1rn3bvis8kem9f0.4b4k4pg5.apigw.yandexcloud.net';
 
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -82,6 +84,22 @@ export default function LoginPage() {
               }}
             />
           </div>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={e => setAgreed(e.target.checked)}
+                style={{ marginTop: 2, accentColor: '#9b72cf', flexShrink: 0, width: 16, height: 16 }}
+              />
+              <span style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>
+                Я даю согласие на обработку персональных данных в соответствии с{' '}
+                <Link href="/privacy" target="_blank" style={{ color: '#7b52af' }}>
+                  Политикой конфиденциальности
+                </Link>
+              </span>
+            </label>
+          </div>
           {error && (
             <div style={{
               background: '#fdeaea', color: '#e74c3c', borderRadius: 8,
@@ -91,12 +109,13 @@ export default function LoginPage() {
             </div>
           )}
           <button
-            type="submit" disabled={loading}
+            type="submit" disabled={loading || !agreed}
             style={{
               width: '100%', padding: '12px', background: '#9b72cf',
               color: 'white', border: 'none', borderRadius: 8, fontSize: 15,
-              fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1
+              fontWeight: 600, cursor: (loading || !agreed) ? 'not-allowed' : 'pointer',
+              opacity: (loading || !agreed) ? 0.5 : 1,
+              transition: 'opacity 0.2s'
             }}
           >
             {loading ? 'Вход...' : 'Войти'}
