@@ -588,7 +588,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     <p>1. <strong>Материалы</strong> — заполните каталог материалов с ценами</p>
     <p>2. <strong>Калькулятор</strong> — соберите шар из материалов, узнайте себестоимость и рекомендованную цену</p>
     <p>3. <strong>Бизнес</strong> — введите расходы студии, увидите полную экономику</p>
-    <p style="margin-top:12px;">Загрузим демо-данные для быстрого старта.</p>
+    <p style="margin-top:12px;">Загрузим стартовый набор материалов, чтобы вы сразу могли начать считать.</p>
     <button class="btn btn-primary" id="btn-onboard-start" style="margin-top:12px; width:100%;">Начать работу</button>
   </div>
 </div>
@@ -668,68 +668,95 @@ function getDefaultState() {
   };
 }
 
-function getDemoMaterials() {
+function getStarterMaterials() {
   return [
-    { id: genId(), name: 'Латексный 5" (пастель)', category: 'balloons', price: 8, balloonSize: '5"' },
-    { id: genId(), name: 'Латексный 10" (пастель)', category: 'balloons', price: 12, balloonSize: '10"' },
-    { id: genId(), name: 'Латексный 12" (пастель)', category: 'balloons', price: 17, balloonSize: '12"' },
-    { id: genId(), name: 'Латексный 14" (пастель)', category: 'balloons', price: 25, balloonSize: '14"' },
-    { id: genId(), name: 'Латексный 18" (пастель)', category: 'balloons', price: 80, balloonSize: '18"' },
-    { id: genId(), name: 'Латексный 24" (кристалл)', category: 'balloons', price: 180, balloonSize: '24"' },
-    { id: genId(), name: 'Латексный 36"', category: 'balloons', price: 350, balloonSize: '36"' },
-    { id: genId(), name: 'Фольга сердце/звезда 18"', category: 'balloons', price: 120, balloonSize: 'Фольга 18"' },
-    { id: genId(), name: 'Фольга круг 18"', category: 'balloons', price: 100, balloonSize: 'Фольга 18"' },
-    { id: genId(), name: 'Фольга фигура', category: 'balloons', price: 250, balloonSize: 'Фольга 24"' },
-    { id: genId(), name: 'Цифра 40"', category: 'balloons', price: 280, balloonSize: 'Цифра 40"' },
-    { id: genId(), name: 'Лента (1м)', category: 'hardware', price: 2, balloonSize: '' },
-    { id: genId(), name: 'Грузик', category: 'hardware', price: 25, balloonSize: '' },
+    { id: genId(), name: 'Латексный 5" (пастель)', category: 'balloons', price: 5.34, balloonSize: '5"' },
+    { id: genId(), name: 'Латексный 5" (хром)', category: 'balloons', price: 10.3, balloonSize: '5"' },
+    { id: genId(), name: 'Латексный 5" (шелк)', category: 'balloons', price: 7.85, balloonSize: '5"' },
+    { id: genId(), name: 'Латексный 12" (кристалл)', category: 'balloons', price: 9.66, balloonSize: '12"' },
+    { id: genId(), name: 'Латексный 12" (пастель)', category: 'balloons', price: 11.59, balloonSize: '12"' },
+    { id: genId(), name: 'Латексный 12" (хром)', category: 'balloons', price: 26.89, balloonSize: '12"' },
+    { id: genId(), name: 'Латексный 12" (шелк)', category: 'balloons', price: 21.68, balloonSize: '12"' },
+    { id: genId(), name: 'Латексный 18" (пастель)', category: 'balloons', price: 40.7, balloonSize: '18"' },
+    { id: genId(), name: 'Латексный 18" (хром)', category: 'balloons', price: 113.33, balloonSize: '18"' },
+    { id: genId(), name: 'Латексный 18" (шелк)', category: 'balloons', price: 85.28, balloonSize: '18"' },
+    { id: genId(), name: 'Латексный 24" (пастель)', category: 'balloons', price: 161.78, balloonSize: '24"' },
+    { id: genId(), name: 'Латексный 24" (хром)', category: 'balloons', price: 293.25, balloonSize: '24"' },
+    { id: genId(), name: 'Латексный 24" (шелк)', category: 'balloons', price: 239.42, balloonSize: '24"' },
+    { id: genId(), name: 'Фольга сердце/звезда 18"', category: 'balloons', price: 56.53, balloonSize: 'Фольга 18"' },
+    { id: genId(), name: 'Фольга сердце/звезда 24"', category: 'balloons', price: 44.2, balloonSize: 'Фольга 24"' },
+    { id: genId(), name: 'Фольга сердце/звезда 30"', category: 'balloons', price: 145, balloonSize: 'Фольга 30"' },
+    { id: genId(), name: 'Фольга сердце/звезда 36"', category: 'balloons', price: 229.5, balloonSize: 'Фольга 36"' },
+    { id: genId(), name: 'Фольга сердце/звезда голография 36"', category: 'balloons', price: 350, balloonSize: '36"' },
+    { id: genId(), name: 'Цифры толстые 40"', category: 'balloons', price: 250, balloonSize: 'Цифра толстая 40"' },
+    { id: genId(), name: 'Цифра тонкие 40"', category: 'balloons', price: 152, balloonSize: 'Цифра тонка 40"' },
+    { id: genId(), name: 'Баблс 18"', category: 'balloons', price: 24, balloonSize: '18"' },
+    { id: genId(), name: 'Баблс 24"', category: 'balloons', price: 49, balloonSize: '24"' },
+    { id: genId(), name: 'Баблс 30"', category: 'balloons', price: 65, balloonSize: '30"' },
+    { id: genId(), name: 'Баблс 36"', category: 'balloons', price: 90, balloonSize: '36"' },
+    { id: genId(), name: 'Латекс браш', category: 'balloons', price: 77.4, balloonSize: '12"' },
+    { id: genId(), name: 'Латекс агат', category: 'balloons', price: 83.4, balloonSize: '12"' },
+    { id: genId(), name: 'Латекс с рисунком', category: 'balloons', price: 13.4, balloonSize: '12"' },
+    { id: genId(), name: 'Фольга звезды/сердца с рисунком', category: 'balloons', price: 100, balloonSize: '18"' },
+    { id: genId(), name: 'Грузик', category: 'hardware', price: 10, balloonSize: '' },
     { id: genId(), name: 'Палочка-держатель', category: 'hardware', price: 4, balloonSize: '' },
     { id: genId(), name: 'Клей-точки (1 шт)', category: 'hardware', price: 1, balloonSize: '' },
-    { id: genId(), name: 'Тассел', category: 'hardware', price: 15, balloonSize: '' },
-    { id: genId(), name: 'Упаковка (пакет)', category: 'consumables', price: 5, balloonSize: '' },
-    { id: genId(), name: 'Коробка-сюрприз', category: 'consumables', price: 300, balloonSize: '' }
+    { id: genId(), name: 'Тассел хвост во всю длину', category: 'hardware', price: 165, balloonSize: '' },
+    { id: genId(), name: 'Тассел хвост на половину', category: 'hardware', price: 82.5, balloonSize: '' },
+    { id: genId(), name: 'Лента обычная (2м)', category: 'hardware', price: 1, balloonSize: '' },
+    { id: genId(), name: 'Лента атласная 0,6 (2м)', category: 'hardware', price: 2.6, balloonSize: '' },
+    { id: genId(), name: 'Лента атласная 1,5 (2м)', category: 'hardware', price: 4, balloonSize: '' },
+    { id: genId(), name: 'Лента атласная 2,5 (2м)', category: 'hardware', price: 6, balloonSize: '' },
+    { id: genId(), name: 'Лента атласная 3,8 (2м)', category: 'hardware', price: 10, balloonSize: '' },
+    { id: genId(), name: 'Доп ленты на баблс/стекляшки', category: 'hardware', price: 18, balloonSize: '' },
+    { id: genId(), name: 'Дождик на шар', category: 'hardware', price: 3, balloonSize: '' },
+    { id: genId(), name: 'Лента хлопок (2м)', category: 'hardware', price: 66, balloonSize: '' },
+    { id: genId(), name: 'Наклейка на шар 45 см', category: 'hardware', price: 40, balloonSize: '' },
+    { id: genId(), name: 'Наклейка на шар 76 см', category: 'hardware', price: 60, balloonSize: '' },
+    { id: genId(), name: 'Наклейка на шар 91 см', category: 'hardware', price: 80, balloonSize: '' },
+    { id: genId(), name: 'Наклейка на коробку 60х60', category: 'hardware', price: 100, balloonSize: '' },
+    { id: genId(), name: 'Перья (1 упаковка)', category: 'hardware', price: 62, balloonSize: '' },
+    { id: genId(), name: 'Конфетти (на 12")', category: 'hardware', price: 5, balloonSize: '' },
+    { id: genId(), name: 'Конфетти (на 18")', category: 'hardware', price: 10, balloonSize: '' },
+    { id: genId(), name: 'Конфетти (на 24")', category: 'hardware', price: 20, balloonSize: '' },
+    { id: genId(), name: 'Конфетти (на 30")', category: 'hardware', price: 30, balloonSize: '' },
+    { id: genId(), name: 'Конфетти (в стекляшку)', category: 'hardware', price: 5, balloonSize: '' },
+    { id: genId(), name: 'Бантики атласные на 12" (1-3 шт)', category: 'hardware', price: 6, balloonSize: '' },
+    { id: genId(), name: 'Бантики атласные на 12" (9 шт)', category: 'hardware', price: 18, balloonSize: '' },
+    { id: genId(), name: 'Бантики атласные на 18"', category: 'hardware', price: 20, balloonSize: '' },
+    { id: genId(), name: 'Бантики атласные на 24"', category: 'hardware', price: 26, balloonSize: '' },
+    { id: genId(), name: 'Бантики атласные на 30"', category: 'hardware', price: 30, balloonSize: '' },
+    { id: genId(), name: 'Пенопласт на 12"', category: 'hardware', price: 3, balloonSize: '' },
+    { id: genId(), name: 'Пенопласт на 18"', category: 'hardware', price: 27, balloonSize: '' },
+    { id: genId(), name: 'Пенопласт на 24"', category: 'hardware', price: 46, balloonSize: '' },
+    { id: genId(), name: 'Упаковка (пакет маленикий)', category: 'consumables', price: 13, balloonSize: '' },
+    { id: genId(), name: 'Упаковка (пакет средний)', category: 'consumables', price: 15, balloonSize: '' },
+    { id: genId(), name: 'Упаковка пакет (для коробки)', category: 'consumables', price: 35, balloonSize: '' },
+    { id: genId(), name: 'Коробка-сюрприз 60х60', category: 'consumables', price: 600, balloonSize: '' },
+    { id: genId(), name: 'Обработка на 12"', category: 'consumables', price: 3, balloonSize: '' },
+    { id: genId(), name: 'Обработка на 18"', category: 'consumables', price: 6, balloonSize: '' },
+    { id: genId(), name: 'Обработка на 24"', category: 'consumables', price: 10, balloonSize: '' },
+    { id: genId(), name: 'Обработка на 30"', category: 'consumables', price: 15, balloonSize: '' }
   ];
 }
 
-function getDemoBalloons(materials) {
-  const find = (q) => materials.find(m => m.name.includes(q));
-  const m12 = find('12" (паст');
-  const mFoil = find('сердце');
-  const mRib = find('Лента');
-  const mWt = find('Грузик');
-  const mStk = find('Палочка');
-  const he12 = Math.round(2500 / 32 * 100) / 100;
-  const heFoil18 = Math.round(2500 / 22 * 100) / 100;
-
-  return [
-    { id: genId(), name: 'Латексный 12" с гелием', items: [
-      { id: genId(), materialId: m12?.id||'', materialName: m12?.name||'Латекс 12"', price: m12?.price||17, qty: 1, helium: true, heliumCost: he12, _isMain: true },
-      { id: genId(), materialId: mRib?.id||'', materialName: mRib?.name||'Лента', price: mRib?.price||2, qty: 1, helium: false, heliumCost: 0, _isMain: false },
-      { id: genId(), materialId: mWt?.id||'', materialName: mWt?.name||'Грузик', price: mWt?.price||25, qty: 1, helium: false, heliumCost: 0, _isMain: false }
-    ], defectPct: 5, customPrice: 150 },
-    { id: genId(), name: 'Фольга сердце 18" с гелием', items: [
-      { id: genId(), materialId: mFoil?.id||'', materialName: mFoil?.name||'Фольга 18"', price: mFoil?.price||120, qty: 1, helium: true, heliumCost: heFoil18, _isMain: true },
-      { id: genId(), materialId: mRib?.id||'', materialName: mRib?.name||'Лента', price: mRib?.price||2, qty: 1, helium: false, heliumCost: 0, _isMain: false },
-      { id: genId(), materialId: mWt?.id||'', materialName: mWt?.name||'Грузик', price: mWt?.price||25, qty: 1, helium: false, heliumCost: 0, _isMain: false }
-    ], defectPct: 2, customPrice: 300 },
-    { id: genId(), name: 'Латексный 12" воздушный', items: [
-      { id: genId(), materialId: m12?.id||'', materialName: m12?.name||'Латекс 12"', price: m12?.price||17, qty: 1, helium: false, heliumCost: 0, _isMain: true },
-      { id: genId(), materialId: mStk?.id||'', materialName: mStk?.name||'Палочка', price: mStk?.price||4, qty: 1, helium: false, heliumCost: 0, _isMain: false }
-    ], defectPct: 5, customPrice: 60 }
-  ];
-}
-
-function getDemoBusiness() {
+function getStarterHelium() {
   return {
-    ordersPerMonth: 30, avgCheck: 3000,
-    managerPct: 10, decoratorPct: 5, acquiringPct: 2, deliveryPct: 3, otherVariablePct: 0,
-    fixedCosts: [
-      { id: genId(), name: 'Аренда', amount: 15000 },
-      { id: genId(), name: 'CRM', amount: 2000 },
-      { id: genId(), name: 'Реклама', amount: 10000 }
-    ],
-    taxMode: 'pct', taxValue: 6,
-    desiredMarginPct: 5, reservePct: 0
+    tankPrice: 10000,
+    sizes: [
+      { label: '5"', balloonsPerTank: 2850 },
+      { label: '12"', balloonsPerTank: 380 },
+      { label: '18"', balloonsPerTank: 100 },
+      { label: '24"', balloonsPerTank: 45 },
+      { label: '30"', balloonsPerTank: 1 },
+      { label: '36"', balloonsPerTank: 14 },
+      { label: 'Фольга 18"', balloonsPerTank: 400 },
+      { label: 'Фольга 24"', balloonsPerTank: 1 },
+      { label: 'Фольга 30"', balloonsPerTank: 204 },
+      { label: 'Фольга 36"', balloonsPerTank: 50 },
+      { label: 'Цифра тонка 40"', balloonsPerTank: 150 },
+      { label: 'Цифра толстая 40"', balloonsPerTank: 1 }
+    ]
   };
 }
 
@@ -1754,14 +1781,13 @@ function checkOnboarding() {
 
 document.getElementById('btn-onboard-start').addEventListener('click', () => {
   state.onboarded = true;
-  state.materials = getDemoMaterials();
-  state.balloons = getDemoBalloons(state.materials);
-  state.business = getDemoBusiness();
-  state.settings.helium.tankPrice = 2500;
+  state.materials = getStarterMaterials();
+  state.balloons = [];
+  state.settings.helium = getStarterHelium();
   saveState();
   document.getElementById('onboarding-modal').style.display = 'none';
   initUI();
-  showToast('Демо-данные загружены!');
+  showToast('Стартовые материалы загружены!');
 });
 
 // ============ INIT UI ============
