@@ -33,6 +33,8 @@
     .refresh-btn:hover { background: #e0e0e0; }
     .delete-btn { width: auto; padding: 6px 12px; background: #fdecea; color: #c62828; border-radius: 6px; font-size: 12px; font-weight: 500; margin-top: 0; flex-shrink: 0; }
     .delete-btn:hover { background: #f5c6c6; }
+    .reset-btn { width: auto; padding: 6px 12px; background: #fff8e1; color: #e65100; border-radius: 6px; font-size: 12px; font-weight: 500; margin-top: 0; flex-shrink: 0; }
+    .reset-btn:hover { background: #ffe0b2; }
   </style>
 </head>
 <body>
@@ -149,9 +151,28 @@
           <div class="email">${u.email.replace(DOMAIN, '')}</div>
           ${u.note ? `<div class="note">${u.note}</div>` : ''}
         </div>
-        <button class="delete-btn" onclick="deleteUser('${u.id}', '${u.email.replace(DOMAIN, '')}')">Удалить</button>
+        <div style="display:flex;gap:6px;">
+          <button class="reset-btn" onclick="resetPassword('${u.id}', '${u.email.replace(DOMAIN, '')}')">Пароль</button>
+          <button class="delete-btn" onclick="deleteUser('${u.id}', '${u.email.replace(DOMAIN, '')}')">Удалить</button>
+        </div>
       </div>
     `).join('');
+  }
+
+  async function resetPassword(userId, login) {
+    const newPassword = prompt(`Новый пароль для "${login}":\n(минимум 8 символов)`);
+    if (!newPassword) return;
+    if (newPassword.length < 8) { alert('Пароль минимум 8 символов'); return; }
+    const res = await fetch(`${API}/admin/users/${userId}/password`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+      body: JSON.stringify({ password: newPassword })
+    });
+    if (res.ok) {
+      alert(`Пароль для "${login}" изменён на:\n${newPassword}`);
+    } else {
+      alert('Ошибка при смене пароля. Попробуйте ещё раз.');
+    }
   }
 
   async function deleteUser(userId, login) {
