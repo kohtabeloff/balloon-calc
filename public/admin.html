@@ -163,10 +163,10 @@
     const newPassword = prompt(`Новый пароль для "${login}":\n(минимум 8 символов)`);
     if (!newPassword) return;
     if (newPassword.length < 8) { alert('Пароль минимум 8 символов'); return; }
-    const res = await fetch(`${API}/admin/users/${userId}/password`, {
-      method: 'PATCH',
+    const res = await fetch(`${API}/admin/users/reset-password`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
-      body: JSON.stringify({ password: newPassword })
+      body: JSON.stringify({ userId, password: newPassword })
     });
     if (res.ok) {
       alert(`Пароль для "${login}" изменён на:\n${newPassword}`);
@@ -177,11 +177,12 @@
 
   async function deleteUser(userId, login) {
     if (!confirm(`Удалить клиента "${login}"?\n\nЭто действие нельзя отменить.`)) return;
-    const res = await fetch(`${API}/admin/users/${userId}`, {
-      method: 'DELETE',
-      headers: { 'x-admin-key': adminKey }
+    const res = await fetch(`${API}/admin/users/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+      body: JSON.stringify({ userId })
     });
-    if (res.ok || res.status === 204) {
+    if (res.ok) {
       loadUsers();
     } else {
       alert('Ошибка при удалении. Попробуйте ещё раз.');
