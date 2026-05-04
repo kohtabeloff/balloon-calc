@@ -25,11 +25,14 @@
     #auth-section { }
     #main-section { display: none; }
     .users-list { margin-top: 16px; }
-    .user-item { padding: 10px 12px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+    .user-item { padding: 10px 12px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px; font-size: 13px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .user-item-info { flex: 1; min-width: 0; }
     .user-item .email { font-weight: 600; color: #1a1a1a; }
     .user-item .note { color: #888; margin-top: 2px; }
     .refresh-btn { background: #f0f0f0; color: #555; margin-top: 0; }
     .refresh-btn:hover { background: #e0e0e0; }
+    .delete-btn { width: auto; padding: 6px 12px; background: #fdecea; color: #c62828; border-radius: 6px; font-size: 12px; font-weight: 500; margin-top: 0; flex-shrink: 0; }
+    .delete-btn:hover { background: #f5c6c6; }
   </style>
 </head>
 <body>
@@ -142,10 +145,26 @@
     if (!data.data?.length) { list.innerHTML = '<div style="color:#999;font-size:13px;">Нет клиентов</div>'; return; }
     list.innerHTML = data.data.map(u => `
       <div class="user-item">
-        <div class="email">${u.email.replace(DOMAIN, '')}</div>
-        ${u.note ? `<div class="note">${u.note}</div>` : ''}
+        <div class="user-item-info">
+          <div class="email">${u.email.replace(DOMAIN, '')}</div>
+          ${u.note ? `<div class="note">${u.note}</div>` : ''}
+        </div>
+        <button class="delete-btn" onclick="deleteUser('${u.id}', '${u.email.replace(DOMAIN, '')}')">Удалить</button>
       </div>
     `).join('');
+  }
+
+  async function deleteUser(userId, login) {
+    if (!confirm(`Удалить клиента "${login}"?\n\nЭто действие нельзя отменить.`)) return;
+    const res = await fetch(`${API}/admin/users/${userId}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-key': adminKey }
+    });
+    if (res.ok || res.status === 204) {
+      loadUsers();
+    } else {
+      alert('Ошибка при удалении. Попробуйте ещё раз.');
+    }
   }
 
   function showMsg(id, text, type) {
